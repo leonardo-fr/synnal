@@ -1,0 +1,15 @@
+# Flutter / Dart
+.dart_tool/
+build/
+
+# macOS
+.DS_Store
+
+# FVM SDK symlink/cache
+.fvm
+.fvmrc
+.fvm/flutter_sdk
+.fvm/fvm_config.json
+
+#VS Code
+.vscode
