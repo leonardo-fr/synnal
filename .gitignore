@@ -1,15 +1,16 @@
 # Flutter / Dart
 .dart_tool/
 build/
+.flutter-plugins-dependencies
 
 # macOS
 .DS_Store
 
-# FVM SDK symlink/cache
-.fvm
-.fvmrc
-.fvm/flutter_sdk
-.fvm/fvm_config.json
+# FVM
+.fvm/
 
-#VS Code
-.vscode
+# VS Code
+.vscode/
+
+# Rust
+rust/target/
