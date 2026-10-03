@@ -8,40 +8,56 @@ Future<void> main() async {
 
   await RustLib.init();
 
-  final greetResult = greet(name: 'Tom');
-
-  final matrixResult = await matrixTestConnection(
-    homeserver: 'https://matrix.org',
-  );
-
-  debugPrint('Rust greet: $greetResult');
-  debugPrint('Matrix: $matrixResult');
-
-  runApp(
-    MyApp(
-      greetResult: greetResult,
-      matrixResult: matrixResult,
-    ),
-  );
+  runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({
-    super.key,
-    required this.greetResult,
-    required this.matrixResult,
-  });
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
 
-  final String greetResult;
-  final String matrixResult;
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  String matrixResult = 'Testando Matrix...';
+
+  @override
+  void initState() {
+    super.initState();
+    _testMatrix();
+  }
+
+  Future<void> _testMatrix() async {
+    try {
+      final result = await matrixTestConnection(
+        homeserver: 'https://matrix.org',
+      );
+
+      debugPrint('Matrix: $result');
+
+      if (!mounted) return;
+
+      setState(() {
+        matrixResult = result;
+      });
+    } catch (e) {
+      debugPrint('Erro Matrix: $e');
+
+      if (!mounted) return;
+
+      setState(() {
+        matrixResult = 'Erro Matrix: $e';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final greetResult = greet(name: 'Tom');
+
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Flutter + Rust + Matrix'),
-        ),
+        appBar: AppBar(title: const Text('Flutter + Rust + Matrix')),
         body: Center(
           child: Text(
             'Rust greet:\n'
