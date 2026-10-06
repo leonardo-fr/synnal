@@ -45,19 +45,12 @@ class HomeScreen extends StatelessWidget {
         listener: (context, state) {
           if (state is RoomCriarFalha) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Não foi possível criar a sala.',
-                ),
-              ),
+              const SnackBar(content: Text('Não foi possível criar a sala.')),
             );
           }
         },
         builder: (context, state) {
-          final nomeUsuario =
-              state.displayName ??
-              state.userId ??
-              'Usuário';
+          final nomeUsuario = state.displayName ?? state.userId ?? 'Usuário';
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -66,20 +59,13 @@ class HomeScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 child: Text(
                   'Olá, $nomeUsuario',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.headlineSmall,
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
               ),
 
               const Divider(height: 1),
 
-              Expanded(
-                child: _buildRoomsContent(
-                  context,
-                  state,
-                ),
-              ),
+              Expanded(child: _buildRoomsContent(context, state)),
             ],
           );
         },
@@ -87,40 +73,29 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRoomsContent(
-    BuildContext context,
-    RoomsState state,
-  ) {
+  Widget _buildRoomsContent(BuildContext context, RoomsState state) {
     //
     // Primeiro carregamento.
     //
-    if (state is RoomsCarregarEmProgresso &&
-        state.rooms.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+    if (state is RoomsCarregarEmProgresso && state.rooms.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
     }
 
     //
     // Falha no primeiro carregamento.
     //
-    if (state is RoomsCarregarFalha &&
-        state.rooms.isEmpty) {
+    if (state is RoomsCarregarFalha && state.rooms.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Não foi possível carregar as salas.',
-            ),
+            const Text('Não foi possível carregar as salas.'),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: () {
                 _recarregarSalas(context);
               },
-              child: const Text(
-                'Tentar novamente',
-              ),
+              child: const Text('Tentar novamente'),
             ),
           ],
         ),
@@ -133,32 +108,17 @@ class HomeScreen extends StatelessWidget {
     //
     return Row(
       children: [
-        SizedBox(
-          width: 280,
-          child: _buildRoomsList(
-            context,
-            state,
-          ),
-        ),
+        SizedBox(width: 280, child: _buildRoomsList(context, state)),
 
         const VerticalDivider(width: 1),
 
-        Expanded(
-          child: _buildSelectedRoom(
-            context,
-            state,
-          ),
-        ),
+        Expanded(child: _buildSelectedRoom(context, state)),
       ],
     );
   }
 
-  Widget _buildRoomsList(
-    BuildContext context,
-    RoomsState state,
-  ) {
-    final criandoSala =
-        state is RoomCriarEmProgresso;
+  Widget _buildRoomsList(BuildContext context, RoomsState state) {
+    final criandoSala = state is RoomCriarEmProgresso;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -167,20 +127,13 @@ class HomeScreen extends StatelessWidget {
         // Cabeçalho da lista.
         //
         Padding(
-          padding: const EdgeInsets.fromLTRB(
-            16,
-            12,
-            8,
-            12,
-          ),
+          padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
           child: Row(
             children: [
               Expanded(
                 child: Text(
                   'Salas',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium,
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
 
@@ -190,9 +143,7 @@ class HomeScreen extends StatelessWidget {
                     : () {
                         _criarSala(context);
                       },
-                icon: const Icon(
-                  Icons.add,
-                ),
+                icon: const Icon(Icons.add),
                 tooltip: 'Criar sala',
               ),
             ],
@@ -202,8 +153,7 @@ class HomeScreen extends StatelessWidget {
         //
         // Feedback enquanto uma sala está sendo criada.
         //
-        if (criandoSala)
-          const LinearProgressIndicator(),
+        if (criandoSala) const LinearProgressIndicator(),
 
         const Divider(height: 1),
 
@@ -231,29 +181,16 @@ class HomeScreen extends StatelessWidget {
             child: ListView.builder(
               itemCount: state.rooms.length,
               itemBuilder: (context, index) {
-                final room =
-                    state.rooms[index];
+                final room = state.rooms[index];
 
-                final selecionada =
-                    state.selectedRoomId ==
-                    room.id;
+                final selecionada = state.selectedRoomId == room.id;
 
                 return ListTile(
-                  leading: const Icon(
-                    Icons.tag,
-                  ),
-                  title: Text(
-                    room.name,
-                  ),
+                  leading: const Icon(Icons.tag),
+                  title: Text(room.name),
                   selected: selecionada,
                   onTap: () {
-                    context
-                        .read<RoomsBloc>()
-                        .add(
-                          RoomSelecionada(
-                            room.id,
-                          ),
-                        );
+                    context.read<RoomsBloc>().add(RoomSelecionada(room.id));
                   },
                 );
               },
@@ -263,21 +200,14 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSelectedRoom(
-    BuildContext context,
-    RoomsState state,
-  ) {
+  Widget _buildSelectedRoom(BuildContext context, RoomsState state) {
     final room = state.selectedRoom;
 
     //
     // Nenhuma sala selecionada.
     //
     if (room == null) {
-      return const Center(
-        child: Text(
-          'Selecione uma sala',
-        ),
-      );
+      return const Center(child: Text('Selecione uma sala'));
     }
 
     //
@@ -290,100 +220,106 @@ class HomeScreen extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Text(
             room.name,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall,
+            style: Theme.of(context).textTheme.headlineSmall,
           ),
         ),
 
         const Divider(height: 1),
 
-        const Expanded(
-          child: Center(
-            child: Text(
-              'Conteúdo da sala',
-            ),
-          ),
-        ),
+        const Expanded(child: Center(child: Text('Conteúdo da sala'))),
       ],
     );
   }
 
-  Future<void> _criarSala(
-    BuildContext context,
-  ) async {
-    final controller =
-        TextEditingController();
+  Future<void> _criarSala(BuildContext context) async {
+    final nameController = TextEditingController();
 
-    final name = await showDialog<String>(
+    final inviteController = TextEditingController();
+    //verificar: TODO: apagar (inicio)
+    final authState = context.read<AuthBloc>().state;
+
+    final currentUserId = authState.userId;
+
+    if (currentUserId == null) {
+      return;
+    }
+
+    debugPrint('Matrix userId atual: $currentUserId');
+    //verificar: apagar (fim)
+
+    final result = await showDialog<({String name, List<String> invitedUsers})>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text(
-            'Nova sala',
-          ),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            textInputAction:
-                TextInputAction.done,
-            decoration:
-                const InputDecoration(
-                  labelText:
-                      'Nome da sala',
-                  hintText:
-                      'Ex.: Desenvolvimento',
+          title: const Text('Nova sala privada'),
+          content: SizedBox(
+            width: 400,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Nome da sala',
+                    hintText: 'Ex.: Desenvolvimento',
+                  ),
                 ),
-            onSubmitted: (value) {
-              final name =
-                  value.trim();
 
-              if (name.isEmpty) {
-                return;
-              }
+                const SizedBox(height: 16),
 
-              Navigator.of(
-                dialogContext,
-              ).pop(name);
-            },
+                TextField(
+                  controller: inviteController,
+                  decoration: const InputDecoration(
+                    labelText: 'Convidados',
+                    hintText: '@usuario:servidor',
+                    helperText: 'Separe vários usuários por vírgula',
+                  ),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(
-                  dialogContext,
-                ).pop();
+                Navigator.of(dialogContext).pop();
               },
-              child: const Text(
-                'Cancelar',
-              ),
+              child: const Text('Cancelar'),
             ),
+
             FilledButton(
               onPressed: () {
-                final name =
-                    controller.text.trim();
+                final name = nameController.text.trim();
+
+                final invitedUsers = inviteController.text
+                    .split(',')
+                    .map((value) => value.trim())
+                    .where((value) => value.isNotEmpty)
+                    .toList();
 
                 if (name.isEmpty) {
                   return;
                 }
 
+                if (invitedUsers.isEmpty) {
+                  return;
+                }
+
                 Navigator.of(
                   dialogContext,
-                ).pop(name);
+                ).pop((name: name, invitedUsers: invitedUsers));
               },
-              child: const Text(
-                'Criar',
-              ),
+              child: const Text('Criar'),
             ),
           ],
         );
       },
     );
 
-    controller.dispose();
+    nameController.dispose();
+    inviteController.dispose();
 
-    if (name == null ||
-        name.isEmpty) {
+    if (result == null) {
       return;
     }
 
@@ -392,7 +328,7 @@ class HomeScreen extends StatelessWidget {
     }
 
     context.read<RoomsBloc>().add(
-      RoomCriada(name),
+      RoomCriada(name: result.name, invitedUserIds: result.invitedUsers),
     );
   }
 }

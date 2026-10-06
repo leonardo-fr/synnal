@@ -30,12 +30,13 @@ class RoomsBloc extends Bloc<RoomsEvent, RoomsState> {
     );
 
     try {
-      final rooms = await _roomsRepository.listarSalas();
+      final snapshot = await _roomsRepository.listarSalas();
 
       emit(
         RoomsCarregarSucesso.fromLastState(
           state,
-          rooms: rooms,
+          rooms: snapshot.rooms,
+          invitedRooms: snapshot.invitedRooms,
           userId: event.userId,
           deviceId: event.deviceId,
           displayName: event.displayName,
@@ -67,7 +68,10 @@ class RoomsBloc extends Bloc<RoomsEvent, RoomsState> {
     emit(RoomCriarEmProgresso.fromLastState(state));
 
     try {
-      final room = await _roomsRepository.criarSala(event.name);
+      final room = await _roomsRepository.criarSalaPrivada(
+        name: event.name,
+        invitedUserIds: event.invitedUserIds,
+      );
 
       final rooms = [...state.rooms, room];
 

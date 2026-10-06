@@ -2,10 +2,7 @@ use std::sync::Arc;
 
 use tokio::sync::RwLock;
 
-use super::client::{
-    MatrixClient,
-    MatrixRoomSummary,
-};
+use super::client::{MatrixClient, MatrixRoomSummary, MatrixRoomsSnapshot};
 
 pub struct MatrixService {
     homeserver: String,
@@ -31,23 +28,17 @@ impl MatrixService {
             homeserver,
             store_path,
             store_passphrase,
-            client: RwLock::new(
-                Some(Arc::new(client)),
-            ),
+            client: RwLock::new(Some(Arc::new(client))),
         })
     }
 
-    async fn current_client(
-        &self,
-    ) -> Result<Arc<MatrixClient>, String> {
+    async fn current_client(&self) -> Result<Arc<MatrixClient>, String> {
         self.client
             .read()
             .await
             .as_ref()
             .cloned()
-            .ok_or_else(|| {
-                "MatrixClient não está inicializado".to_string()
-            })
+            .ok_or_else(|| "MatrixClient não está inicializado".to_string())
     }
 
     /// Descarta completamente o Client atual e cria outro.
@@ -55,17 +46,13 @@ impl MatrixService {
     /// Isso é necessário quando uma sessão restaurada fica inválida,
     /// pois o Matrix SDK não permite substituir a autenticação de um
     /// Client que já teve uma sessão configurada.
-    pub async fn reset_client(
-        &self,
-    ) -> Result<(), String> {
+    pub async fn reset_client(&self) -> Result<(), String> {
         // Primeiro remove o Client antigo.
         //
         // Isso garante que a sessão carregada em memória seja
         // realmente descartada antes de criarmos outro Client.
         {
-            let mut client = self.client
-                .write()
-                .await;
+            let mut client = self.client.write().await;
 
             *client = None;
         }
@@ -78,13 +65,9 @@ impl MatrixService {
         .await?;
 
         {
-            let mut client = self.client
-                .write()
-                .await;
+            let mut client = self.client.write().await;
 
-            *client = Some(
-                Arc::new(novo_client),
-            );
+            *client = Some(Arc::new(novo_client));
         }
 
         Ok(())
@@ -100,43 +83,23 @@ impl MatrixService {
 
         self.current_client()
             .await?
-            .login_password(
-                username,
-                password,
-                device_id,
-            )
+            .login_password(username, password, device_id)
             .await
     }
 
-    pub async fn get_display_name(
-        &self,
-    ) -> Result<Option<String>, String> {
+    pub async fn get_display_name(&self) -> Result<Option<String>, String> {
+        self.current_client().await?.get_display_name().await
+    }
+
+    pub async fn restore(&self, session_json: String) -> Result<(), String> {
         self.current_client()
             .await?
-            .get_display_name()
+            .restore_session(session_json)
             .await
     }
 
-    pub async fn restore(
-        &self,
-        session_json: String,
-    ) -> Result<(), String> {
-        self.current_client()
-            .await?
-            .restore_session(
-                session_json,
-            )
-            .await
-    }
-
-    pub async fn is_logged_in(
-        &self,
-    ) -> Result<bool, String> {
-        Ok(
-            self.current_client()
-                .await?
-                .is_logged_in(),
-        )
+    pub async fn is_logged_in(&self) -> Result<bool, String> {
+        Ok(self.current_client().await?.is_logged_in())
     }
 
     pub async fn register_user(
@@ -147,17 +110,11 @@ impl MatrixService {
     ) -> Result<String, String> {
         self.current_client()
             .await?
-            .register_user(
-                username,
-                password,
-                display_name,
-            )
+            .register_user(username, password, display_name)
             .await
     }
 
-    pub async fn logout(
-        &self,
-    ) -> Result<(), String> {
+    pub async fn logout(&self) -> Result<(), String> {
         let client = self.current_client().await?;
 
         let logout_result = client.logout().await;
@@ -171,22 +128,25 @@ impl MatrixService {
         logout_result
     }
 
-    pub async fn list_joined_rooms(
-        &self,
-    ) -> Result<Vec<MatrixRoomSummary>, String> {
-        self.current_client()
-            .await?
-            .list_joined_rooms()
-            .await
+    pub async fn list_rooms(&self) -> Result<MatrixRoomsSnapshot, String> {
+        self.current_client().await?.list_rooms().await
     }
 
-    pub async fn create_room(
+    pub async fn create_private_room(
         &self,
         name: String,
+        invited_user_ids: Vec<String>,
     ) -> Result<MatrixRoomSummary, String> {
         self.current_client()
             .await?
-            .create_room(name)
+            .create_private_room(name, invited_user_ids)
+            .await
+    }
+
+    pub async fn join_invited_room(&self, room_id: String) -> Result<MatrixRoomSummary, String> {
+        self.current_client()
+            .await?
+            .join_invited_room(room_id)
             .await
     }
 }

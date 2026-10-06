@@ -2,6 +2,7 @@ part of 'rooms_bloc.dart';
 
 abstract class RoomsState {
   final List<Room> rooms;
+  final List<Room> invitedRooms;
   final String? selectedRoomId;
 
   final String? userId;
@@ -10,6 +11,7 @@ abstract class RoomsState {
 
   const RoomsState(
     this.rooms,
+    this.invitedRooms,
     this.selectedRoomId,
     this.userId,
     this.deviceId,
@@ -18,6 +20,7 @@ abstract class RoomsState {
 
   RoomsState.vazio()
     : rooms = const [],
+      invitedRooms = const [],
       selectedRoomId = null,
       userId = null,
       deviceId = null,
@@ -26,15 +29,14 @@ abstract class RoomsState {
   RoomsState.fromLastState(
     RoomsState lastState, {
     List<Room>? rooms,
+    List<Room>? invitedRooms,
     String? selectedRoomId,
     String? userId,
     String? deviceId,
     String? displayName,
-    bool limparSelecao = false,
   }) : rooms = rooms ?? lastState.rooms,
-       selectedRoomId = limparSelecao
-           ? null
-           : selectedRoomId ?? lastState.selectedRoomId,
+       invitedRooms = invitedRooms ?? lastState.invitedRooms,
+       selectedRoomId = selectedRoomId ?? lastState.selectedRoomId,
        userId = userId ?? lastState.userId,
        deviceId = deviceId ?? lastState.deviceId,
        displayName = displayName ?? lastState.displayName;
@@ -73,6 +75,7 @@ class RoomsCarregarSucesso extends RoomsState {
   RoomsCarregarSucesso.fromLastState(
     super.lastState, {
     required super.rooms,
+    required super.invitedRooms,
     required super.userId,
     required super.deviceId,
     required super.displayName,

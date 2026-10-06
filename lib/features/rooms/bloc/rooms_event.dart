@@ -24,6 +24,7 @@ class RoomSelecionada extends RoomsEvent {
 
 class RoomCriada extends RoomsEvent {
   final String name;
+  final List<String> invitedUserIds;
 
-  const RoomCriada(this.name);
+  const RoomCriada({required this.name, required this.invitedUserIds});
 }

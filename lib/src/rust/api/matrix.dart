@@ -21,13 +21,18 @@ abstract class MatrixService implements RustOpaqueInterface {
     storePassphrase: storePassphrase,
   );
 
-  Future<MatrixRoomSummary> createRoom({required String name});
+  Future<MatrixRoomSummary> createPrivateRoom({
+    required String name,
+    required List<String> invitedUserIds,
+  });
 
   Future<String?> getDisplayName();
 
   Future<bool> isLoggedIn();
 
-  Future<List<MatrixRoomSummary>> listJoinedRooms();
+  Future<MatrixRoomSummary> joinInvitedRoom({required String roomId});
+
+  Future<MatrixRoomsSnapshot> listRooms();
 
   Future<String> login({
     required String username,

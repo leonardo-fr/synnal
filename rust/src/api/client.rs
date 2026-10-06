@@ -1,10 +1,16 @@
 use matrix_sdk::{
     authentication::matrix::MatrixSession,
     config::SyncSettings,
-    ruma::api::client::{
-        account::register::v3::Request as RegistrationRequest,
-        room::create_room::v3::Request as CreateRoomRequest,
-        uiaa::{AuthData, Dummy},
+    ruma::{
+        api::client::{
+            account::register::v3::Request as RegistrationRequest,
+            room::{
+                create_room::v3::{Request as CreateRoomRequest, RoomPreset},
+                Visibility,
+            },
+            uiaa::{AuthData, Dummy},
+        },
+        OwnedRoomId, OwnedUserId,
     },
     store::RoomLoadSettings,
     Client,
@@ -18,13 +24,19 @@ pub struct MatrixRoomSummary {
     pub name: String,
 }
 
-pub struct MatrixClient {
+#[derive(Clone, Debug)]
+pub struct MatrixRoomsSnapshot {
+    pub rooms: Vec<MatrixRoomSummary>,
+    pub invited_rooms: Vec<MatrixRoomSummary>,
+}
+
+pub(super) struct MatrixClient {
     client: Client,
     auth_lock: Mutex<()>,
 }
 
 impl MatrixClient {
-    pub async fn new(
+    pub(super) async fn new(
         homeserver: String,
         store_path: String,
         store_passphrase: String,
@@ -41,7 +53,8 @@ impl MatrixClient {
             auth_lock: Mutex::new(()),
         })
     }
-    pub async fn get_display_name(&self) -> Result<Option<String>, String> {
+
+    pub(super) async fn get_display_name(&self) -> Result<Option<String>, String> {
         self.client
             .account()
             .get_display_name()
@@ -49,7 +62,7 @@ impl MatrixClient {
             .map_err(|e| e.to_string())
     }
 
-    pub async fn login_password(
+    pub(super) async fn login_password(
         &self,
         username: String,
         password: String,
@@ -83,7 +96,7 @@ impl MatrixClient {
         serde_json::to_string(&session).map_err(|e| e.to_string())
     }
 
-    pub async fn restore_session(&self, session_json: String) -> Result<(), String> {
+    pub(super) async fn restore_session(&self, session_json: String) -> Result<(), String> {
         let _guard = self.auth_lock.lock().await;
 
         let auth = self.client.matrix_auth();
@@ -101,11 +114,11 @@ impl MatrixClient {
             .map_err(|e| e.to_string())
     }
 
-    pub fn is_logged_in(&self) -> bool {
+    pub(super) fn is_logged_in(&self) -> bool {
         self.client.matrix_auth().logged_in()
     }
 
-    pub async fn register_user(
+    pub(super) async fn register_user(
         &self,
         username: String,
         password: String,
@@ -126,11 +139,8 @@ impl MatrixClient {
         let mut request = RegistrationRequest::new();
 
         request.username = Some(username.clone());
-
         request.password = Some(password.clone());
-
         request.initial_device_display_name = Some("Synnal Desktop".to_string());
-
         request.refresh_token = false;
 
         let resultado = auth.register(request).await;
@@ -158,13 +168,9 @@ impl MatrixClient {
                 let mut request = RegistrationRequest::new();
 
                 request.username = Some(username);
-
                 request.password = Some(password);
-
                 request.initial_device_display_name = Some("Synnal Desktop".to_string());
-
                 request.refresh_token = false;
-
                 request.auth = Some(AuthData::Dummy(dummy));
 
                 auth.register(request).await.map_err(|e| e.to_string())?;
@@ -194,7 +200,7 @@ impl MatrixClient {
         serde_json::to_string(&session).map_err(|e| e.to_string())
     }
 
-    pub async fn logout(&self) -> Result<(), String> {
+    pub(super) async fn logout(&self) -> Result<(), String> {
         let _guard = self.auth_lock.lock().await;
 
         let auth = self.client.matrix_auth();
@@ -206,7 +212,7 @@ impl MatrixClient {
         self.client.logout().await.map_err(|e| e.to_string())
     }
 
-    pub async fn list_joined_rooms(&self) -> Result<Vec<MatrixRoomSummary>, String> {
+    pub(super) async fn list_rooms(&self) -> Result<MatrixRoomsSnapshot, String> {
         self.client
             .sync_once(SyncSettings::default())
             .await
@@ -215,11 +221,15 @@ impl MatrixClient {
         let mut rooms = Vec::new();
 
         for room in self.client.joined_rooms() {
-            let name = room
-                .display_name()
-                .await
-                .map_err(|e| e.to_string())?
-                .to_string();
+            let name = match room.name() {
+                Some(name) if !name.trim().is_empty() => name,
+
+                _ => room
+                    .display_name()
+                    .await
+                    .map_err(|e| e.to_string())?
+                    .to_string(),
+            };
 
             rooms.push(MatrixRoomSummary {
                 room_id: room.room_id().to_string(),
@@ -227,21 +237,98 @@ impl MatrixClient {
             });
         }
 
+        let mut invited_rooms = Vec::new();
+
+        for room in self.client.invited_rooms() {
+            let name = match room.name() {
+                Some(name) if !name.trim().is_empty() => name,
+
+                _ => room
+                    .display_name()
+                    .await
+                    .map_err(|e| e.to_string())?
+                    .to_string(),
+            };
+
+            invited_rooms.push(MatrixRoomSummary {
+                room_id: room.room_id().to_string(),
+                name,
+            });
+        }
+
         rooms.sort_by_key(|room| room.name.to_lowercase());
 
-        Ok(rooms)
+        invited_rooms.sort_by_key(|room| room.name.to_lowercase());
+
+        Ok(MatrixRoomsSnapshot {
+            rooms,
+            invited_rooms,
+        })
     }
 
-    pub async fn create_room(&self, name: String) -> Result<MatrixRoomSummary, String> {
+    pub(super) async fn create_private_room(
+        &self,
+        name: String,
+        invited_user_ids: Vec<String>,
+    ) -> Result<MatrixRoomSummary, String> {
+        if invited_user_ids.is_empty() {
+            return Err("Informe pelo menos um usuário para convidar.".to_string());
+        }
+
+        let invited_users = invited_user_ids
+            .into_iter()
+            .map(|user_id| {
+                user_id
+                    .parse::<OwnedUserId>()
+                    .map_err(|e| format!("ID Matrix inválido '{user_id}': {e}"))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
         let mut request = CreateRoomRequest::new();
 
         request.name = Some(name.clone());
+
+        request.preset = Some(RoomPreset::PrivateChat);
+
+        request.visibility = Visibility::Private;
+
+        request.invite = invited_users;
 
         let room = self
             .client
             .create_room(request)
             .await
             .map_err(|e| e.to_string())?;
+
+        Ok(MatrixRoomSummary {
+            room_id: room.room_id().to_string(),
+            name,
+        })
+    }
+
+    pub(super) async fn join_invited_room(
+        &self,
+        room_id: String,
+    ) -> Result<MatrixRoomSummary, String> {
+        let room_id = room_id
+            .parse::<OwnedRoomId>()
+            .map_err(|e| format!("Room ID inválido '{room_id}': {e}"))?;
+
+        let room = self
+            .client
+            .join_room_by_id(&room_id)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        let name = match room.name() {
+            Some(name) if !name.trim().is_empty() => name,
+
+            _ => room
+                .display_name()
+                .await
+                .map_err(|e| e.to_string())?
+                .to_string(),
+        };
 
         Ok(MatrixRoomSummary {
             room_id: room.room_id().to_string(),

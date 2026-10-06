@@ -6,11 +6,25 @@ class MatrixRoomsClient {
 
   MatrixRoomsClient(this._matrixService);
 
-  Future<List<rust_client.MatrixRoomSummary>> listarSalas() {
-    return _matrixService.listJoinedRooms();
+  Future<rust_client.MatrixRoomsSnapshot> listarSalas() {
+    return _matrixService.listRooms();
   }
 
-  Future<rust_client.MatrixRoomSummary> criarSala(String name) {
-    return _matrixService.createRoom(name: name);
+  Future<rust_client.MatrixRoomSummary> criarSalaPrivada({
+    required String name,
+    required List<String> invitedUserIds,
+  }) {
+    return _matrixService.createPrivateRoom(
+      name: name,
+      invitedUserIds: invitedUserIds,
+    );
+  }
+
+  Future<rust_client.MatrixRoomSummary> aceitarConvite(
+    String roomId,
+  ) {
+    return _matrixService.joinInvitedRoom(
+      roomId: roomId,
+    );
   }
 }
