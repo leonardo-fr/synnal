@@ -120,12 +120,11 @@ class HomeScreen extends StatelessWidget {
   Widget _buildRoomsList(BuildContext context, RoomsState state) {
     final criandoSala = state is RoomCriarEmProgresso;
 
+    final aceitandoConvite = state is RoomConviteAceitarEmProgresso;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        //
-        // Cabeçalho da lista.
-        //
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
           child: Row(
@@ -135,6 +134,14 @@ class HomeScreen extends StatelessWidget {
                   'Salas',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
+              ),
+
+              IconButton(
+                onPressed: () {
+                  _recarregarSalas(context);
+                },
+                icon: const Icon(Icons.refresh),
+                tooltip: 'Atualizar salas',
               ),
 
               IconButton(
@@ -150,52 +157,146 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
 
-        //
-        // Feedback enquanto uma sala está sendo criada.
-        //
         if (criandoSala) const LinearProgressIndicator(),
 
         const Divider(height: 1),
 
-        //
-        // Nenhuma sala.
-        //
-        if (state.rooms.isEmpty)
-          const Expanded(
-            child: Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'Você ainda não participa '
-                  'de nenhuma sala.',
-                  textAlign: TextAlign.center,
+        Expanded(
+          child: ListView(
+            children: [
+              //
+              // Convites
+              //
+              if (state.invitedRooms.isNotEmpty) ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Text(
+                    'Convites',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
                 ),
-              ),
-            ),
-          )
-        else
-          //
-          // Lista de salas.
-          //
-          Expanded(
-            child: ListView.builder(
-              itemCount: state.rooms.length,
-              itemBuilder: (context, index) {
-                final room = state.rooms[index];
 
-                final selecionada = state.selectedRoomId == room.id;
+                ...state.invitedRooms.map((room) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Padding(
+                                  padding: EdgeInsets.only(top: 2),
+                                  child: Icon(Icons.mail_outline),
+                                ),
 
-                return ListTile(
-                  leading: const Icon(Icons.tag),
-                  title: Text(room.name),
-                  selected: selecionada,
-                  onTap: () {
-                    context.read<RoomsBloc>().add(RoomSelecionada(room.id));
-                  },
-                );
-              },
-            ),
+                                const SizedBox(width: 12),
+
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        room.name,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleSmall,
+                                      ),
+
+                                      const SizedBox(height: 4),
+
+                                      Text(
+                                        room.id,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            FilledButton.tonal(
+                              onPressed: aceitandoConvite
+                                  ? null
+                                  : () {
+                                      context.read<RoomsBloc>().add(
+                                        RoomConviteAceito(room.id),
+                                      );
+                                    },
+                              child: aceitandoConvite
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text('Aceitar convite'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+
+                const Divider(),
+              ],
+
+              //
+              // Salas
+              //
+              if (state.rooms.isNotEmpty) ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Text(
+                    'Minhas salas',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+
+                ...state.rooms.map((room) {
+                  final selecionada = state.selectedRoomId == room.id;
+
+                  return ListTile(
+                    leading: const Icon(Icons.tag),
+                    title: Text(room.name),
+                    selected: selecionada,
+                    onTap: () {
+                      context.read<RoomsBloc>().add(RoomSelecionada(room.id));
+                    },
+                  );
+                }),
+              ],
+
+              //
+              // Nada ainda.
+              //
+              if (state.rooms.isEmpty && state.invitedRooms.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text(
+                    'Você ainda não participa '
+                    'de nenhuma sala e não possui '
+                    'convites.',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+            ],
           ),
+        ),
       ],
     );
   }

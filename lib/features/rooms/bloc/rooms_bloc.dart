@@ -14,6 +14,7 @@ class RoomsBloc extends Bloc<RoomsEvent, RoomsState> {
     on<RoomsCarregadas>(_onRoomsCarregadas);
     on<RoomSelecionada>(_onRoomSelecionada);
     on<RoomCriada>(_onRoomCriada);
+    on<RoomConviteAceito>(_onRoomConviteAceito);
   }
 
   FutureOr<void> _onRoomsCarregadas(
@@ -86,6 +87,32 @@ class RoomsBloc extends Bloc<RoomsEvent, RoomsState> {
       addError(error, stackTrace);
 
       emit(RoomCriarFalha.fromLastState(state));
+    }
+  }
+
+  Future<void> _onRoomConviteAceito(
+    RoomConviteAceito event,
+    Emitter<RoomsState> emit,
+  ) async {
+    emit(RoomConviteAceitarEmProgresso.fromLastState(state));
+
+    try {
+      final room = await _roomsRepository.aceitarConvite(event.roomId);
+
+      emit(
+        RoomConviteAceitarSucesso.fromLastState(
+          state,
+          rooms: [...state.rooms, room],
+          invitedRooms: state.invitedRooms
+              .where((item) => item.id != event.roomId)
+              .toList(),
+          selectedRoomId: room.id,
+        ),
+      );
+    } catch (error, stackTrace) {
+      addError(error, stackTrace);
+
+      emit(RoomConviteAceitarFalha.fromLastState(state));
     }
   }
 }

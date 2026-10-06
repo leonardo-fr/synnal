@@ -28,3 +28,9 @@ class RoomCriada extends RoomsEvent {
 
   const RoomCriada({required this.name, required this.invitedUserIds});
 }
+
+class RoomConviteAceito extends RoomsEvent {
+  final String roomId;
+
+  const RoomConviteAceito(this.roomId);
+}
