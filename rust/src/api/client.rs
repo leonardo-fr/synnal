@@ -122,41 +122,67 @@ impl MatrixClient {
         &self,
         username: String,
         password: String,
-        displayName: String,
+        display_name: String,
     ) -> Result<String, String> {
         let _guard =
             self.auth_lock.lock().await;
 
         let auth =
             self.client.matrix_auth();
+            
+        if auth.session().is_some() {
+            return Err(
+                "O cliente Matrix já possui uma sessão. \
+                É necessário recriar o MatrixClient antes \
+                de cadastrar outro usuário."
+                    .to_string(),
+            );
+        }
 
+        // Primeira tentativa de cadastro.
         let mut request =
             RegistrationRequest::new();
 
         request.username =
-            Some(username.clone());
+            Some(
+                username.clone(),
+            );
 
         request.password =
-            Some(password.clone());
+            Some(
+                password.clone(),
+            );
 
         request.initial_device_display_name =
             Some(
-                "Synnal Desktop".to_string(),
+                "Synnal Desktop"
+                    .to_string(),
             );
 
-        request.refresh_token = false;
+        request.refresh_token =
+            false;
 
         let resultado =
-            auth.register(request).await;
+            auth.register(
+                request,
+            )
+            .await;
 
         match resultado {
-            Ok(_) => {}
+            Ok(_) => {
+                // Cadastro realizado diretamente.
+            }
 
             Err(error) => {
-                // O primeiro cadastro pode retornar UIAA.
+                // O Synapse pode exigir UIAA,
+                // normalmente usando m.login.dummy.
                 let uiaa =
-                    match error.as_uiaa_response() {
-                        Some(uiaa) => uiaa,
+                    match error
+                        .as_uiaa_response()
+                    {
+                        Some(uiaa) =>
+                            uiaa,
+
                         None => {
                             return Err(
                                 error.to_string(),
@@ -164,26 +190,26 @@ impl MatrixClient {
                         }
                     };
 
-                let session =
-                    uiaa.session.clone();
-
                 let mut dummy =
                     Dummy::new();
 
                 dummy.session =
-                    session;
+                    uiaa.session.clone();
 
                 let mut request =
                     RegistrationRequest::new();
 
                 request.username =
-                    Some(username);
+                    Some(
+                        username,
+                    );
 
                 request.password =
-                    Some(password);
+                    Some(
+                        password,
+                    );
 
-                request
-                    .initial_device_display_name =
+                request.initial_device_display_name =
                     Some(
                         "Synnal Desktop"
                             .to_string(),
@@ -199,20 +225,44 @@ impl MatrixClient {
                         ),
                     );
 
-                auth.register(request)
-                    .await
-                    .map_err(
-                        |e| e.to_string(),
-                    )?;
+                auth.register(
+                    request,
+                )
+                .await
+                .map_err(
+                    |e| e.to_string(),
+                )?;
             }
         }
 
-        let session = auth
-            .session()
-            .ok_or_else(|| {
-                "Usuário criado, mas nenhuma sessão foi retornada"
-                    .to_string()
-            })?;
+        // Neste ponto o register() já deve ter
+        // configurado a sessão do Client.
+        let session =
+            auth.session()
+                .ok_or_else(|| {
+                    "Usuário criado, mas nenhuma sessão foi retornada"
+                        .to_string()
+                })?;
+
+        // O nome não faz parte do RegistrationRequest.
+        // Ele é configurado no perfil depois que
+        // a conta está autenticada.
+        self.client
+            .account()
+            .set_display_name(
+                Some(
+                    display_name.as_str(),
+                ),
+            )
+            .await
+            .map_err(
+                |e| {
+                    format!(
+                        "Usuário criado, mas não foi possível \
+                        definir o nome de exibição: {e}"
+                    )
+                },
+            )?;
 
         serde_json::to_string(
             &session,

@@ -345,7 +345,7 @@ fn wire__crate__api__client__MatrixClient_register_user_impl(
             >>::sse_decode(&mut deserializer);
             let api_username = <String>::sse_decode(&mut deserializer);
             let api_password = <String>::sse_decode(&mut deserializer);
-            let api_displayName = <String>::sse_decode(&mut deserializer);
+            let api_display_name = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, String>(
@@ -371,7 +371,7 @@ fn wire__crate__api__client__MatrixClient_register_user_impl(
                             &*api_that_guard,
                             api_username,
                             api_password,
-                            api_displayName,
+                            api_display_name,
                         )
                         .await?;
                         std::result::Result::Ok(output_ok)

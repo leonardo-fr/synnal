@@ -58,16 +58,16 @@ class AuthRepository {
     return true;
   }
 
+  static bool _sessaoInvalida(Object error) {
+    final mensagem = error.toString();
+
+    return mensagem.contains('M_UNKNOWN_TOKEN') ||
+        mensagem.contains('Invalid access token') ||
+        mensagem.contains('refresh token does not exist');
+  }
+
   static bool _deveTentarRestaurarNovamente(Object error) {
-    final msg = error.toString();
-
-    if (msg.contains('M_UNKNOWN_TOKEN')) return false;
-
-    if (msg.contains('Invalid access token')) return false;
-
-    if (msg.contains('refresh token does not exist')) {
-      return false;
-    }
+    if (_sessaoInvalida(error)) return false;
 
     return true;
   }
@@ -99,6 +99,8 @@ class AuthRepository {
         final autenticado = await _matrixAuthClient.estaAutenticado();
 
         if (!autenticado) {
+          await _authStorageClient.removerSession();
+
           return null;
         }
 
@@ -108,6 +110,12 @@ class AuthRepository {
       } catch (error, stackTrace) {
         ultimoErro = error;
         ultimoStackTrace = stackTrace;
+
+        if (_sessaoInvalida(error)) {
+          await _authStorageClient.removerSession();
+
+          return null;
+        }
 
         final ultimaTentativa = tentativa == totalTentativas;
 
