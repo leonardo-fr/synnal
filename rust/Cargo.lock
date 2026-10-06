@@ -2973,6 +2973,8 @@ version = "0.1.0"
 dependencies = [
  "flutter_rust_bridge",
  "matrix-sdk",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]

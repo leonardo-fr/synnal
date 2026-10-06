@@ -6,28 +6,32 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MatrixService>>
-abstract class MatrixService implements RustOpaqueInterface {
-  static Future<MatrixService> create({
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MatrixClient>>
+abstract class MatrixClient implements RustOpaqueInterface {
+  Future<bool> isLoggedIn();
+
+  Future<String> loginPassword({
+    required String username,
+    required String password,
+  });
+
+  Future<void> logout();
+
+  // HINT: Make it `#[frb(sync)]` to let it become the default constructor of Dart class.
+  static Future<MatrixClient> newInstance({
     required String homeserver,
     required String storePath,
     required String storePassphrase,
-  }) => RustLib.instance.api.crateApiMatrixMatrixServiceCreate(
+  }) => RustLib.instance.api.crateApiClientMatrixClientNew(
     homeserver: homeserver,
     storePath: storePath,
     storePassphrase: storePassphrase,
   );
-
-  Future<bool> isLoggedIn();
-
-  Future<String> login({required String username, required String password});
-
-  Future<void> logout();
 
   Future<String> registerUser({
     required String username,
     required String password,
   });
 
-  Future<void> restore({required String sessionJson});
+  Future<void> restoreSession({required String sessionJson});
 }
