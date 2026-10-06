@@ -28,7 +28,9 @@ class AuthRepository {
 
         await _authStorageClient.salvarSession(rawSession);
 
-        return AuthSession.fromRawSession(rawSession);
+        final displayName = await _matrixAuthClient.obterNomeUsuario();
+
+        return AuthSession.fromRawSession(rawSession, displayName: displayName);
       } catch (error, stackTrace) {
         ultimoErro = error;
         ultimoStackTrace = stackTrace;
@@ -100,7 +102,9 @@ class AuthRepository {
           return null;
         }
 
-        return AuthSession.fromRawSession(rawSession);
+        final displayName = await _matrixAuthClient.obterNomeUsuario();
+
+        return AuthSession.fromRawSession(rawSession, displayName: displayName);
       } catch (error, stackTrace) {
         ultimoErro = error;
         ultimoStackTrace = stackTrace;
@@ -118,19 +122,20 @@ class AuthRepository {
     Error.throwWithStackTrace(ultimoErro!, ultimoStackTrace!);
   }
 
-  Future<AuthSession> criarUsuario(String username, String password) async {
-    try {
-      final rawSession = await _matrixAuthClient.criarUsuario(
-        username,
-        password,
-      );
+  Future<AuthSession> criarUsuario(
+    String username,
+    String password,
+    String nome,
+  ) async {
+    final rawSession = await _matrixAuthClient.criarUsuario(
+      username,
+      password,
+      nome,
+    );
 
-      await _authStorageClient.salvarSession(rawSession);
+    await _authStorageClient.salvarSession(rawSession);
 
-      return AuthSession.fromRawSession(rawSession);
-    } catch (e) {
-      rethrow;
-    }
+    return AuthSession.fromRawSession(rawSession, displayName: nome);
   }
 
   Future<void> sair() async {

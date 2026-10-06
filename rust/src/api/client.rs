@@ -40,6 +40,15 @@ impl MatrixClient {
             auth_lock: Mutex::new(()),
         })
     }
+    pub async fn get_display_name(
+        &self,
+    ) -> Result<Option<String>, String> {
+        self.client
+            .account()
+            .get_display_name()
+            .await
+            .map_err(|e| e.to_string())
+    }
 
     pub async fn login_password(
         &self,
@@ -113,6 +122,7 @@ impl MatrixClient {
         &self,
         username: String,
         password: String,
+        displayName: String,
     ) -> Result<String, String> {
         let _guard =
             self.auth_lock.lock().await;

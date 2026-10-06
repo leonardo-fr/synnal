@@ -33,6 +33,13 @@ impl MatrixService {
         .login_password(username, password)
         .await
     }
+    pub async fn get_display_name(
+        &self,
+    ) -> Result<Option<String>, String> {
+        self.client
+            .get_display_name()
+            .await
+    }
 
     pub async fn restore(&self,
         session_json: String,
@@ -50,11 +57,13 @@ impl MatrixService {
     &self,
     username: String,
     password: String,
+    displayName: String,
 ) -> Result<String, String> {
     self.client
         .register_user(
             username,
             password,
+            displayName,
         )
         .await
 }

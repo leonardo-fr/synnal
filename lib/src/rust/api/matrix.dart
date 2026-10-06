@@ -18,6 +18,8 @@ abstract class MatrixService implements RustOpaqueInterface {
     storePassphrase: storePassphrase,
   );
 
+  Future<String?> getDisplayName();
+
   Future<bool> isLoggedIn();
 
   Future<String> login({required String username, required String password});
@@ -27,6 +29,7 @@ abstract class MatrixService implements RustOpaqueInterface {
   Future<String> registerUser({
     required String username,
     required String password,
+    required String displayName,
   });
 
   Future<void> restore({required String sessionJson});

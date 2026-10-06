@@ -68,7 +68,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => -1976289419;
+  int get rustContentHash => -475589570;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -80,6 +80,10 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 }
 
 abstract class RustLibApi extends BaseApi {
+  Future<String?> crateApiClientMatrixClientGetDisplayName({
+    required MatrixClient that,
+  });
+
   Future<bool> crateApiClientMatrixClientIsLoggedIn({
     required MatrixClient that,
   });
@@ -102,6 +106,7 @@ abstract class RustLibApi extends BaseApi {
     required MatrixClient that,
     required String username,
     required String password,
+    required String displayName,
   });
 
   Future<void> crateApiClientMatrixClientRestoreSession({
@@ -113,6 +118,10 @@ abstract class RustLibApi extends BaseApi {
     required String homeserver,
     required String storePath,
     required String storePassphrase,
+  });
+
+  Future<String?> crateApiMatrixMatrixServiceGetDisplayName({
+    required MatrixService that,
   });
 
   Future<bool> crateApiMatrixMatrixServiceIsLoggedIn({
@@ -131,6 +140,7 @@ abstract class RustLibApi extends BaseApi {
     required MatrixService that,
     required String username,
     required String password,
+    required String displayName,
   });
 
   Future<void> crateApiMatrixMatrixServiceRestore({
@@ -169,7 +179,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   });
 
   @override
-  Future<bool> crateApiClientMatrixClientIsLoggedIn({
+  Future<String?> crateApiClientMatrixClientGetDisplayName({
     required MatrixClient that,
   }) {
     return handler.executeNormal(
@@ -184,6 +194,42 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             generalizedFrbRustBinding,
             serializer,
             funcId: 1,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_opt_String,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiClientMatrixClientGetDisplayNameConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiClientMatrixClientGetDisplayNameConstMeta =>
+      const TaskConstMeta(
+        debugName: "MatrixClient_get_display_name",
+        argNames: ["that"],
+      );
+
+  @override
+  Future<bool> crateApiClientMatrixClientIsLoggedIn({
+    required MatrixClient that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMatrixClient(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 2,
             port: port_,
           );
         },
@@ -223,7 +269,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 2,
+            funcId: 3,
             port: port_,
           );
         },
@@ -257,7 +303,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 3,
+            funcId: 4,
             port: port_,
           );
         },
@@ -291,7 +337,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 4,
+            funcId: 5,
             port: port_,
           );
         },
@@ -318,6 +364,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required MatrixClient that,
     required String username,
     required String password,
+    required String displayName,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -329,10 +376,11 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
           sse_encode_String(username, serializer);
           sse_encode_String(password, serializer);
+          sse_encode_String(displayName, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 5,
+            funcId: 6,
             port: port_,
           );
         },
@@ -341,7 +389,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_String,
         ),
         constMeta: kCrateApiClientMatrixClientRegisterUserConstMeta,
-        argValues: [that, username, password],
+        argValues: [that, username, password, displayName],
         apiImpl: this,
       ),
     );
@@ -350,7 +398,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateApiClientMatrixClientRegisterUserConstMeta =>
       const TaskConstMeta(
         debugName: "MatrixClient_register_user",
-        argNames: ["that", "username", "password"],
+        argNames: ["that", "username", "password", "displayName"],
       );
 
   @override
@@ -370,7 +418,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 6,
+            funcId: 7,
             port: port_,
           );
         },
@@ -407,7 +455,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 7,
+            funcId: 8,
             port: port_,
           );
         },
@@ -430,6 +478,42 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<String?> crateApiMatrixMatrixServiceGetDisplayName({
+    required MatrixService that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMatrixService(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 9,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_opt_String,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiMatrixMatrixServiceGetDisplayNameConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiMatrixMatrixServiceGetDisplayNameConstMeta =>
+      const TaskConstMeta(
+        debugName: "MatrixService_get_display_name",
+        argNames: ["that"],
+      );
+
+  @override
   Future<bool> crateApiMatrixMatrixServiceIsLoggedIn({
     required MatrixService that,
   }) {
@@ -444,7 +528,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 8,
+            funcId: 10,
             port: port_,
           );
         },
@@ -484,7 +568,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 9,
+            funcId: 11,
             port: port_,
           );
         },
@@ -520,7 +604,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 10,
+            funcId: 12,
             port: port_,
           );
         },
@@ -546,6 +630,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required MatrixService that,
     required String username,
     required String password,
+    required String displayName,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -557,10 +642,11 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
           sse_encode_String(username, serializer);
           sse_encode_String(password, serializer);
+          sse_encode_String(displayName, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 11,
+            funcId: 13,
             port: port_,
           );
         },
@@ -569,7 +655,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_String,
         ),
         constMeta: kCrateApiMatrixMatrixServiceRegisterUserConstMeta,
-        argValues: [that, username, password],
+        argValues: [that, username, password, displayName],
         apiImpl: this,
       ),
     );
@@ -578,7 +664,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateApiMatrixMatrixServiceRegisterUserConstMeta =>
       const TaskConstMeta(
         debugName: "MatrixService_register_user",
-        argNames: ["that", "username", "password"],
+        argNames: ["that", "username", "password", "displayName"],
       );
 
   @override
@@ -598,7 +684,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 12,
+            funcId: 14,
             port: port_,
           );
         },
@@ -626,7 +712,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(name, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 13)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -651,7 +737,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 14,
+            funcId: 16,
             port: port_,
           );
         },
@@ -755,6 +841,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as Uint8List;
+  }
+
+  @protected
+  String? dco_decode_opt_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_String(raw);
   }
 
   @protected
@@ -865,6 +957,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var len_ = sse_decode_i_32(deserializer);
     return deserializer.buffer.getUint8List(len_);
+  }
+
+  @protected
+  String? sse_decode_opt_String(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_String(deserializer));
+    } else {
+      return null;
+    }
   }
 
   @protected
@@ -991,6 +1094,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_opt_String(String? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_String(self, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_u_8(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putUint8(self);
@@ -1033,6 +1146,9 @@ class MatrixClientImpl extends RustOpaque implements MatrixClient {
         RustLib.instance.api.rust_arc_decrement_strong_count_MatrixClientPtr,
   );
 
+  Future<String?> getDisplayName() =>
+      RustLib.instance.api.crateApiClientMatrixClientGetDisplayName(that: this);
+
   Future<bool> isLoggedIn() =>
       RustLib.instance.api.crateApiClientMatrixClientIsLoggedIn(that: this);
 
@@ -1051,10 +1167,12 @@ class MatrixClientImpl extends RustOpaque implements MatrixClient {
   Future<String> registerUser({
     required String username,
     required String password,
+    required String displayName,
   }) => RustLib.instance.api.crateApiClientMatrixClientRegisterUser(
     that: this,
     username: username,
     password: password,
+    displayName: displayName,
   );
 
   Future<void> restoreSession({required String sessionJson}) =>
@@ -1083,6 +1201,9 @@ class MatrixServiceImpl extends RustOpaque implements MatrixService {
         RustLib.instance.api.rust_arc_decrement_strong_count_MatrixServicePtr,
   );
 
+  Future<String?> getDisplayName() => RustLib.instance.api
+      .crateApiMatrixMatrixServiceGetDisplayName(that: this);
+
   Future<bool> isLoggedIn() =>
       RustLib.instance.api.crateApiMatrixMatrixServiceIsLoggedIn(that: this);
 
@@ -1099,10 +1220,12 @@ class MatrixServiceImpl extends RustOpaque implements MatrixService {
   Future<String> registerUser({
     required String username,
     required String password,
+    required String displayName,
   }) => RustLib.instance.api.crateApiMatrixMatrixServiceRegisterUser(
     that: this,
     username: username,
     password: password,
+    displayName: displayName,
   );
 
   Future<void> restore({required String sessionJson}) => RustLib.instance.api

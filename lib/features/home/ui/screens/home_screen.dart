@@ -2,18 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:synnal/features/auth/bloc/auth_bloc.dart';
 
-
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({
-    super.key,
-  });
+  const HomeScreen({super.key});
 
-  void _sair(
-    BuildContext context,
-  ) {
-    context.read<AuthBloc>().add(
-      const AuthSaiu(),
-    );
+  void _sair(BuildContext context) {
+    context.read<AuthBloc>().add(const AuthSaiu());
   }
 
   @override
@@ -28,9 +21,7 @@ class HomeScreen extends StatelessWidget {
             ..hideCurrentSnackBar()
             ..showSnackBar(
               const SnackBar(
-                content: Text(
-                  'Não foi possível realizar o logout.',
-                ),
+                content: Text('Não foi possível realizar o logout.'),
               ),
             );
         }
@@ -40,24 +31,19 @@ class HomeScreen extends StatelessWidget {
             previous is AuthSairEmProgresso;
       },
       builder: (context, state) {
-        final saindo =
-            state is AuthSairEmProgresso;
+        final saindo = state is AuthSairEmProgresso;
+        final nome = state.displayName ?? state.userId ?? 'Usuário';
 
         return Scaffold(
           body: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'AUTENTICADO!!',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Text(
+                  'Nome do usuário autenticado: $nome',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(
-                  height: 24,
-                ),
+                const SizedBox(height: 24),
                 FilledButton(
                   onPressed: saindo
                       ? null
@@ -68,14 +54,9 @@ class HomeScreen extends StatelessWidget {
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child:
-                              CircularProgressIndicator(
-                            strokeWidth: 2,
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text(
-                          'Logout',
-                        ),
+                      : const Text('Logout'),
                 ),
               ],
             ),

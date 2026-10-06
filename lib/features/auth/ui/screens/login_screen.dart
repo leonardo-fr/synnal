@@ -17,6 +17,9 @@ class _LoginScreenState
     extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
+  final _nomeController =
+      TextEditingController();
+
   final _usuarioController =
       TextEditingController();
 
@@ -25,6 +28,9 @@ class _LoginScreenState
 
   final _confirmarSenhaController =
       TextEditingController();
+
+  final _nomeFocusNode =
+      FocusNode();
 
   final _usuarioFocusNode =
       FocusNode();
@@ -40,10 +46,12 @@ class _LoginScreenState
 
   @override
   void dispose() {
+    _nomeController.dispose();
     _usuarioController.dispose();
     _senhaController.dispose();
     _confirmarSenhaController.dispose();
 
+    _nomeFocusNode.dispose();
     _usuarioFocusNode.dispose();
     _senhaFocusNode.dispose();
     _confirmarSenhaFocusNode.dispose();
@@ -63,6 +71,7 @@ class _LoginScreenState
         AuthCriouUsuario(
           _usuarioController.text.trim(),
           _senhaController.text,
+          _nomeController.text.trim(),
         ),
       );
 
@@ -79,14 +88,46 @@ class _LoginScreenState
 
   void _alternarModo() {
     setState(() {
-      _modoCadastro = !_modoCadastro;
+      _modoCadastro =
+          !_modoCadastro;
 
+      _nomeController.clear();
       _confirmarSenhaController.clear();
     });
 
     _formKey.currentState?.reset();
 
-    _usuarioFocusNode.requestFocus();
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      if (_modoCadastro) {
+        _nomeFocusNode.requestFocus();
+      } else {
+        _usuarioFocusNode.requestFocus();
+      }
+    });
+  }
+
+  String? _validarNome(
+    String? value,
+  ) {
+    if (!_modoCadastro) {
+      return null;
+    }
+
+    if (value == null ||
+        value.trim().isEmpty) {
+      return 'Informe seu nome';
+    }
+
+    if (value.trim().length < 3) {
+      return 'Informe um nome válido';
+    }
+
+    return null;
   }
 
   String? _validarUsuario(
@@ -171,8 +212,7 @@ class _LoginScreenState
       child: Scaffold(
         body: SafeArea(
           child: Center(
-            child:
-                SingleChildScrollView(
+            child: SingleChildScrollView(
               padding:
                   const EdgeInsets.all(
                 32,
@@ -214,8 +254,7 @@ class _LoginScreenState
 
                     return Form(
                       key: _formKey,
-                      child:
-                          AutofillGroup(
+                      child: AutofillGroup(
                         child: Column(
                           crossAxisAlignment:
                               CrossAxisAlignment
@@ -225,15 +264,28 @@ class _LoginScreenState
                             const SizedBox(
                               height: 40,
                             ),
+
+                            if (_modoCadastro) ...[
+                              _campoNome(
+                                carregando,
+                              ),
+                              const SizedBox(
+                                height: 16,
+                              ),
+                            ],
+
                             _campoUsuario(
                               carregando,
                             ),
+
                             const SizedBox(
                               height: 16,
                             ),
+
                             _campoSenha(
                               carregando,
                             ),
+
                             if (_modoCadastro) ...[
                               const SizedBox(
                                 height: 16,
@@ -242,15 +294,19 @@ class _LoginScreenState
                                 carregando,
                               ),
                             ],
+
                             const SizedBox(
                               height: 24,
                             ),
+
                             _botaoPrincipal(
                               carregando,
                             ),
+
                             const SizedBox(
                               height: 12,
                             ),
+
                             _botaoAlternarModo(
                               carregando,
                             ),
@@ -302,6 +358,43 @@ class _LoginScreenState
     );
   }
 
+  Widget _campoNome(
+    bool carregando,
+  ) {
+    return TextFormField(
+      controller:
+          _nomeController,
+      focusNode:
+          _nomeFocusNode,
+      enabled: !carregando,
+      autofocus:
+          _modoCadastro,
+      autofillHints: const [
+        AutofillHints.name,
+      ],
+      textCapitalization:
+          TextCapitalization.words,
+      textInputAction:
+          TextInputAction.next,
+      validator:
+          _validarNome,
+      onFieldSubmitted: (_) {
+        _usuarioFocusNode
+            .requestFocus();
+      },
+      decoration:
+          const InputDecoration(
+        labelText: 'Nome e sobrenome',
+        hintText: 'Ex: João de Farias',
+        prefixIcon: Icon(
+          Icons.badge_outlined,
+        ),
+        border:
+            OutlineInputBorder(),
+      ),
+    );
+  }
+
   Widget _campoUsuario(
     bool carregando,
   ) {
@@ -311,7 +404,8 @@ class _LoginScreenState
       focusNode:
           _usuarioFocusNode,
       enabled: !carregando,
-      autofocus: true,
+      autofocus:
+          !_modoCadastro,
       autofillHints: const [
         AutofillHints.username,
       ],
@@ -326,9 +420,10 @@ class _LoginScreenState
       decoration:
           InputDecoration(
         labelText: 'Usuário',
-        hintText: _modoCadastro
-            ? 'novo_usuario'
-            : '@usuario:servidor.com',
+        hintText:
+            _modoCadastro
+                ? 'joao'
+                : '@usuario:servidor.com',
         prefixIcon:
             const Icon(
           Icons.person_outline,

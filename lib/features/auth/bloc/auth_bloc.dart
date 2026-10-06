@@ -35,6 +35,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           state,
           userId: session.userId,
           deviceId: session.deviceId,
+          displayName: session.displayName,
         ),
       );
     } catch (error, stackTrace) {
@@ -61,6 +62,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           state,
           userId: session.userId,
           deviceId: session.deviceId,
+          displayName: session.displayName,
         ),
       );
     } catch (error, stackTrace) {
@@ -94,6 +96,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final session = await _authRepository.criarUsuario(
         event.username,
         event.password,
+        event.nome,
       );
 
       emit(
@@ -101,6 +104,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           state,
           userId: session.userId,
           deviceId: session.deviceId,
+          displayName: session.displayName,
         ),
       );
     } catch (error, stackTrace) {

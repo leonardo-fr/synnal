@@ -4,20 +4,32 @@ abstract class AuthState {
   final bool autenticado;
   final String? userId;
   final String? deviceId;
+  final String? displayName;
 
-  const AuthState(this.autenticado, this.userId, this.deviceId);
+  const AuthState(
+    this.autenticado,
+    this.userId,
+    this.deviceId,
+    this.displayName,
+  );
 
-  AuthState.vazio() : autenticado = false, userId = null, deviceId = null;
+  AuthState.vazio()
+    : autenticado = false,
+      userId = null,
+      deviceId = null,
+      displayName = null;
 
   AuthState.fromLastState(
     AuthState lastState, {
     bool? autenticado,
     String? userId,
     String? deviceId,
+    String? displayName,
     bool limparSessao = false,
   }) : autenticado = autenticado ?? lastState.autenticado,
        userId = limparSessao ? null : userId ?? lastState.userId,
-       deviceId = limparSessao ? null : deviceId ?? lastState.deviceId;
+       deviceId = limparSessao ? null : deviceId ?? lastState.deviceId,
+       displayName = displayName ?? lastState.displayName;
 }
 
 class AuthInicial extends AuthState {
@@ -34,6 +46,7 @@ class AuthCarregarSucesso extends AuthState {
     super.lastState, {
     required super.userId,
     required super.deviceId,
+    required super.displayName,
   }) : super.fromLastState(autenticado: true);
 }
 
@@ -56,6 +69,7 @@ class AuthEntrarSucesso extends AuthState {
     super.lastState, {
     required super.userId,
     required super.deviceId,
+    required super.displayName,
   }) : super.fromLastState(autenticado: true);
 }
 
@@ -87,6 +101,7 @@ class AuthCriarUsuarioSucesso extends AuthState {
     super.lastState, {
     required super.userId,
     required super.deviceId,
+    required super.displayName,
   }) : super.fromLastState(autenticado: true);
 }
 

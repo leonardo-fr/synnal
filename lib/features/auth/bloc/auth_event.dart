@@ -13,9 +13,6 @@ class AuthEntrou extends AuthEvent {
   final String password;
 
   const AuthEntrou(this.username, this.password);
-
-  // @override
-  // List<Object?> get props => [username, password];
 }
 
 class AuthSaiu extends AuthEvent {
@@ -25,6 +22,7 @@ class AuthSaiu extends AuthEvent {
 class AuthCriouUsuario extends AuthEvent {
   final String username;
   final String password;
+  final String nome;
 
-  const AuthCriouUsuario(this.username, this.password);
+  const AuthCriouUsuario(this.username, this.password, this.nome);
 }

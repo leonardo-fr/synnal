@@ -8,6 +8,8 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MatrixClient>>
 abstract class MatrixClient implements RustOpaqueInterface {
+  Future<String?> getDisplayName();
+
   Future<bool> isLoggedIn();
 
   Future<String> loginPassword({
@@ -31,6 +33,7 @@ abstract class MatrixClient implements RustOpaqueInterface {
   Future<String> registerUser({
     required String username,
     required String password,
+    required String displayName,
   });
 
   Future<void> restoreSession({required String sessionJson});
