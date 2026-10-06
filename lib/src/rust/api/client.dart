@@ -6,11 +6,15 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `fmt`
+
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MatrixClient>>
 abstract class MatrixClient implements RustOpaqueInterface {
   Future<String?> getDisplayName();
 
   Future<bool> isLoggedIn();
+
+  Future<List<MatrixRoomSummary>> listJoinedRooms();
 
   Future<String> loginPassword({
     required String username,
@@ -38,4 +42,22 @@ abstract class MatrixClient implements RustOpaqueInterface {
   });
 
   Future<void> restoreSession({required String sessionJson});
+}
+
+class MatrixRoomSummary {
+  final String roomId;
+  final String name;
+
+  const MatrixRoomSummary({required this.roomId, required this.name});
+
+  @override
+  int get hashCode => roomId.hashCode ^ name.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MatrixRoomSummary &&
+          runtimeType == other.runtimeType &&
+          roomId == other.roomId &&
+          name == other.name;
 }

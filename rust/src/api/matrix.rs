@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use tokio::sync::RwLock;
 
-use super::client::MatrixClient;
+use super::client::{
+    MatrixClient,
+    MatrixRoomSummary,
+};
 
 pub struct MatrixService {
     homeserver: String,
@@ -166,5 +169,14 @@ impl MatrixService {
         self.reset_client().await?;
 
         logout_result
+    }
+
+    pub async fn list_joined_rooms(
+        &self,
+    ) -> Result<Vec<MatrixRoomSummary>, String> {
+        self.current_client()
+            .await?
+            .list_joined_rooms()
+            .await
     }
 }

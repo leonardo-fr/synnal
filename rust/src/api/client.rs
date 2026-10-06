@@ -1,8 +1,8 @@
 use matrix_sdk::{
     authentication::matrix::MatrixSession,
+    config::SyncSettings,
     ruma::api::client::{
-        account::register::v3::Request
-            as RegistrationRequest,
+        account::register::v3::Request as RegistrationRequest,
         uiaa::{
             AuthData,
             Dummy,
@@ -13,6 +13,12 @@ use matrix_sdk::{
 };
 
 use tokio::sync::Mutex;
+
+#[derive(Clone, Debug)]
+pub struct MatrixRoomSummary {
+    pub room_id: String,
+    pub name: String,
+}
 
 pub struct MatrixClient {
     client: Client,
@@ -297,5 +303,37 @@ impl MatrixClient {
             .logout()
             .await
             .map_err(|e| e.to_string())
+    }
+
+    pub async fn list_joined_rooms(
+        &self,
+    ) -> Result<Vec<MatrixRoomSummary>, String> {
+        self.client
+            .sync_once(SyncSettings::default())
+            .await
+            .map_err(|e| e.to_string())?;
+
+        let mut rooms = Vec::new();
+
+        for room in self.client.joined_rooms() {
+            let name = room
+                .display_name()
+                .await
+                .map_err(|e| e.to_string())?
+                .to_string();
+
+            rooms.push(
+                MatrixRoomSummary {
+                    room_id: room.room_id().to_string(),
+                    name,
+                },
+            );
+        }
+
+        rooms.sort_by_key(
+            |room| room.name.to_lowercase(),
+        );
+
+        Ok(rooms)
     }
 }
