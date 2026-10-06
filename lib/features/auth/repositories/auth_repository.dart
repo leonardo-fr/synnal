@@ -10,14 +10,52 @@ class AuthRepository {
 
   Future<AuthSession> entrar(String username, String password) async {
     try {
-      final rawSession = await _matrixAuthClient.login(username, password);
-
-      await _authStorageClient.salvarSession(rawSession);
-
-      return AuthSession.fromRawSession(rawSession);
+      return await _entrarComRetry(username, password);
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<AuthSession> _entrarComRetry(String username, String password) async {
+    const totalTentativas = 2;
+
+    Object? ultimoErro;
+    StackTrace? ultimoStackTrace;
+
+    for (var tentativa = 1; tentativa <= totalTentativas; tentativa++) {
+      try {
+        final rawSession = await _matrixAuthClient.login(username, password);
+
+        await _authStorageClient.salvarSession(rawSession);
+
+        return AuthSession.fromRawSession(rawSession);
+      } catch (error, stackTrace) {
+        ultimoErro = error;
+        ultimoStackTrace = stackTrace;
+
+        final ultimaTentativa = tentativa == totalTentativas;
+
+        if (ultimaTentativa || !_deveTentarNovamente(error)) {
+          Error.throwWithStackTrace(error, stackTrace);
+        }
+
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+      }
+    }
+
+    Error.throwWithStackTrace(ultimoErro!, ultimoStackTrace!);
+  }
+
+  static bool _deveTentarNovamente(Object error) {
+    final mensagem = error.toString();
+
+    if (mensagem.contains('M_FORBIDDEN')) return false;
+
+    if (mensagem.contains('Invalid username or password')) {
+      return false;
+    }
+
+    return true;
   }
 
   Future<AuthSession?> restaurarSessao() async {

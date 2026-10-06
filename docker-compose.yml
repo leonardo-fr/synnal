@@ -1,0 +1,17 @@
+services:
+  synapse:
+    image: matrixdotorg/synapse:latest
+    container_name: synapse
+    restart: unless-stopped
+    ports:
+      - "8008:8008"
+    environment:
+      SYNAPSE_CONFIG_PATH: /data/homeserver.yaml
+    volumes:
+      # Banco, mídia, signing key, logs e demais dados persistentes
+      - synapse-data:/data
+      # Usa diretamente o homeserver.yaml da raiz do projeto
+      - ./homeserver.yaml:/data/homeserver.yaml:ro
+volumes:
+  synapse-data:
+    name: synapse-data

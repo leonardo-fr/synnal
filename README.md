@@ -33,7 +33,7 @@ cargo tree --depth 1
 ```
 
 ## Synapse local
-Durante o desenvolvimento, o Synnal utiliza uma instância local do Matrix Synapse executada com Docker.
+Durante o desenvolvimento, o Synnal utiliza uma instância local do Matrix Synapse executada com Docker Compose.
 
 # O homeserver local fica disponível em:
 ```text
@@ -55,6 +55,7 @@ Por isso, os usuários Matrix criados localmente possuem identificadores no form
 # O arquivo de configuração do Synapse é mantido na raiz do projeto:
 ```text
 synnal/
+├── docker-compose.yml
 ├── homeserver.yaml
 ├── lib/
 ├── macos/
@@ -62,7 +63,7 @@ synnal/
 └── ...
 ```
 
-O container Docker utiliza diretamente esse mesmo arquivo através de um bind mount.
+O container Docker utiliza diretamente esse mesmo arquivo através de um bind mount configurado no `docker-compose.yml`.
 Isso evita manter duas cópias diferentes do `homeserver.yaml`.
 
 Fluxo:
@@ -99,6 +100,16 @@ database:
 ```
 
 > `enable_registration_without_verification: true` deve ser usado somente em ambiente local de desenvolvimento.
+
+## Arquivo `docker-compose.yml`
+O arquivo `docker-compose.yml` também é mantido na raiz do projeto e é responsável por definir o container do Synapse, a porta utilizada, o volume persistente e o bind mount do `homeserver.yaml`.
+
+#Explicação do docker-compose.yml:
+- o banco, mídia, signing key, logs e demais dados persistentes ficam no volume `synapse-data`;
+- o `homeserver.yaml` utilizado pelo Synapse é exatamente o arquivo da raiz do projeto;
+- o `homeserver.yaml` é montado como somente leitura dentro do container;
+- a porta `8008` do Synapse é exposta para o host;
+- não é necessário executar `docker cp` sempre que o `homeserver.yaml` for alterado.
 
 ## Primeira configuração do Synapse
 
@@ -148,6 +159,8 @@ Depois disso, edite o arquivo localizado em:
 /Users/frreserve/synnal/homeserver.yaml
 ```
 
+Com o `homeserver.yaml` disponível na raiz do projeto, o Synapse passa a ser executado pelo Docker Compose.
+
 ## Rodando o Synapse usando o mesmo `homeserver.yaml` do projeto
 
 Na raiz do projeto:
@@ -156,24 +169,40 @@ Na raiz do projeto:
 cd /Users/frreserve/synnal
 ```
 
-Crie o container usando:
+Suba o Synapse:
 
 ```bash
-docker run -d \
-  --name synapse \
-  --mount type=volume,src=synapse-data,dst=/data \
-  --mount type=bind,src=/Users/frreserve/synnal/homeserver.yaml,dst=/data/homeserver.yaml,readonly \
-  -p 8008:8008 \
-  matrixdotorg/synapse:latest
+docker compose up -d
 ```
 
-Nesse formato:
-- o banco e os demais dados persistentes continuam no volume `synapse-data`;
-- o `homeserver.yaml` utilizado pelo Synapse é exatamente o arquivo da raiz do projeto;
-- não é necessário executar `docker cp` sempre que o arquivo for alterado.
+O Docker Compose utilizará o arquivo:
+
+```text
+/Users/frreserve/synnal/docker-compose.yml
+```
+
+e montará automaticamente:
+
+```text
+./homeserver.yaml
+        ↓
+/data/homeserver.yaml
+```
+
+Para verificar o container:
+
+```bash
+docker compose ps
+```
+
+Para acompanhar os logs:
+
+```bash
+docker compose logs -f synapse
+```
 
 ## Se já existir um container `synapse`
-Se o container atual foi criado sem o bind mount do `homeserver.yaml`, ele precisa ser recriado uma única vez.
+Se o container atual foi criado anteriormente com `docker run`, ele precisa ser removido uma única vez antes de passar a ser gerenciado pelo Docker Compose.
 
 Pare o container:
 
@@ -189,54 +218,67 @@ docker rm synapse
 
 O volume `synapse-data` não será removido, portanto o banco e os demais dados persistentes continuarão disponíveis.
 
-Recrie o container:
+Depois, na raiz do projeto:
 
 ```bash
-docker run -d \
-  --name synapse \
-  --mount type=volume,src=synapse-data,dst=/data \
-  --mount type=bind,src=/Users/frreserve/synnal/homeserver.yaml,dst=/data/homeserver.yaml,readonly \
-  -p 8008:8008 \
-  matrixdotorg/synapse:latest
+cd /Users/frreserve/synnal
 ```
+
+Suba novamente o Synapse usando o Docker Compose:
+
+```bash
+docker compose up -d
+```
+
+A partir desse momento, o container passa a ser gerenciado pelo `docker-compose.yml`.
 
 ## Uso no dia a dia
 
-Para iniciar o Synapse:
+Para iniciar ou criar o container do Synapse:
 
 ```bash
-docker start synapse
+docker compose up -d
 ```
 
-Para parar:
+Para parar o Synapse sem remover o container:
 
 ```bash
-docker stop synapse
+docker compose stop
+```
+
+Para iniciar novamente um container parado:
+
+```bash
+docker compose start
 ```
 
 Para reiniciar:
 
 ```bash
-docker restart synapse
+docker compose restart synapse
 ```
 
 Para acompanhar os logs:
 
 ```bash
-docker logs -f synapse
+docker compose logs -f synapse
 ```
 
-Para verificar se está rodando:
+Para verificar o estado do serviço:
 
 ```bash
-docker ps
+docker compose ps
 ```
 
-Para listar também containers parados:
+Para parar e remover o container e a rede criados pelo Compose:
 
 ```bash
-docker ps -a
+docker compose down
 ```
+
+O comando acima mantém o volume `synapse-data`.
+
+> Não utilize `docker compose down -v` se quiser preservar os usuários, o banco e os demais dados persistentes do Synapse.
 
 ## Alterando o `homeserver.yaml`
 
@@ -249,10 +291,10 @@ code /Users/frreserve/synnal/homeserver.yaml
 Após salvar uma alteração, reinicie o Synapse:
 
 ```bash
-docker restart synapse
+docker compose restart synapse
 ```
 
-Como o arquivo está montado diretamente no container, não é necessário copiá-lo novamente.
+Como o arquivo está montado diretamente no container pelo `docker-compose.yml`, não é necessário copiá-lo novamente.
 
 ## Validando o Synapse
 
@@ -279,7 +321,7 @@ m.login.password
 Também é possível criar usuários diretamente no Synapse:
 
 ```bash
-docker exec -it synapse \
+docker compose exec synapse \
   register_new_matrix_user \
   http://localhost:8008 \
   -c /data/homeserver.yaml
@@ -310,7 +352,7 @@ Matrix Rust SDK
   ↓
 http://127.0.0.1:8008
   ↓
-Docker
+Docker Compose
   ↓
 Synapse
   ↓
@@ -342,7 +384,7 @@ e adicionar o arquivo real ao `.gitignore`.
 Com o Synapse iniciado:
 
 ```bash
-docker start synapse
+docker compose up -d
 ```
 
 Execute o Synnal no macOS:

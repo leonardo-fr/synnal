@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:synnal/app/routes.dart';
+
 import 'package:synnal/features/auth/bloc/auth_bloc.dart';
 import 'package:synnal/features/auth/clients/auth_storage_client.dart';
 import 'package:synnal/features/auth/clients/matrix_auth_client.dart';
 import 'package:synnal/features/auth/repositories/auth_repository.dart';
-import 'package:synnal/features/auth/ui/screens/login_screen.dart';
-import 'package:synnal/features/home/ui/screens/home_screen.dart';
 
-import 'package:synnal/src/rust/api/matrix.dart'
-    as rust_matrix;
+import 'package:synnal/src/rust/api/matrix.dart' as rust_matrix;
 
 class App extends StatelessWidget {
   final rust_matrix.MatrixService matrixService;
@@ -20,24 +20,17 @@ class App extends StatelessWidget {
     required this.authStorageClient,
   });
 
-  RepositoryProvider<MatrixAuthClient>
-  _matrixAuthClientProvider() {
+  RepositoryProvider<MatrixAuthClient> _matrixAuthClientProvider() {
     return RepositoryProvider(
-      create: (context) => MatrixAuthClient(
-        matrixService,
-      ),
+      create: (context) => MatrixAuthClient(matrixService),
     );
   }
 
-  RepositoryProvider<AuthStorageClient>
-  _authStorageClientProvider() {
-    return RepositoryProvider.value(
-      value: authStorageClient,
-    );
+  RepositoryProvider<AuthStorageClient> _authStorageClientProvider() {
+    return RepositoryProvider.value(value: authStorageClient);
   }
 
-  RepositoryProvider<AuthRepository>
-  _authRepositoryProvider() {
+  RepositoryProvider<AuthRepository> _authRepositoryProvider() {
     return RepositoryProvider(
       create: (context) => AuthRepository(
         context.read<MatrixAuthClient>(),
@@ -61,51 +54,50 @@ class App extends StatelessWidget {
   }
 }
 
-class AppView extends StatelessWidget {
-  const AppView({
-    super.key,
-  });
+class AppView extends StatefulWidget {
+  const AppView({super.key});
+
+  @override
+  State<AppView> createState() => _AppViewState();
+}
+
+class _AppViewState extends State<AppView> {
+  final _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<AuthBloc>(
-      create: (context) => AuthBloc(
-        context.read<AuthRepository>(),
-      )..add(
-          const AuthIniciou(),
-        ),
-      child: const AuthView(),
-    );
-  }
-}
+      create: (context) =>
+          AuthBloc(context.read<AuthRepository>())..add(const AuthIniciou()),
+      child: BlocListener<AuthBloc, AuthState>(
+        listenWhen: (previous, current) {
+          return current is AuthCarregarSucesso ||
+              current is AuthNaoAutenticado ||
+              current is AuthEntrarSucesso ||
+              current is AuthCriarUsuarioSucesso ||
+              current is AuthSairSucesso;
+        },
+        listener: (context, state) {
+          final navigator = _navigatorKey.currentState;
 
-class AuthView extends StatelessWidget {
-  const AuthView({
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: BlocBuilder<AuthBloc, AuthState>(
-        builder: (context, state) {
-          if (state
-              is AuthCarregarEmProgresso) {
-            return const Scaffold(
-              body: Center(
-                child:
-                    CircularProgressIndicator(),
-              ),
-            );
+          if (navigator == null) {
+            return;
           }
 
           if (state.autenticado) {
-            return const HomeScreen();
+            navigator.pushNamedAndRemoveUntil('/home', (_) => false);
+
+            return;
           }
 
-          return const LoginScreen();
+          navigator.pushNamedAndRemoveUntil('/login', (_) => false);
         },
+        child: MaterialApp(
+          navigatorKey: _navigatorKey,
+          debugShowCheckedModeBanner: false,
+          initialRoute: '/',
+          routes: synnalRoutes(),
+        ),
       ),
     );
   }
