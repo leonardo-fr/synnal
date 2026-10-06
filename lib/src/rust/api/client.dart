@@ -15,6 +15,7 @@ abstract class MatrixClient implements RustOpaqueInterface {
   Future<String> loginPassword({
     required String username,
     required String password,
+    String? deviceId,
   });
 
   Future<void> logout();

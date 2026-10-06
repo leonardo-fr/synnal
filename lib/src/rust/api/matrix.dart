@@ -6,6 +6,8 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+// These functions are ignored because they are not marked as `pub`: `current_client`
+
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MatrixService>>
 abstract class MatrixService implements RustOpaqueInterface {
   static Future<MatrixService> create({
@@ -22,7 +24,11 @@ abstract class MatrixService implements RustOpaqueInterface {
 
   Future<bool> isLoggedIn();
 
-  Future<String> login({required String username, required String password});
+  Future<String> login({
+    required String username,
+    required String password,
+    String? deviceId,
+  });
 
   Future<void> logout();
 
@@ -31,6 +37,13 @@ abstract class MatrixService implements RustOpaqueInterface {
     required String password,
     required String displayName,
   });
+
+  /// Descarta completamente o Client atual e cria outro.
+  ///
+  /// Isso é necessário quando uma sessão restaurada fica inválida,
+  /// pois o Matrix SDK não permite substituir a autenticação de um
+  /// Client que já teve uma sessão configurada.
+  Future<void> resetClient();
 
   Future<void> restore({required String sessionJson});
 }

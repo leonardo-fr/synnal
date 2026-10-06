@@ -19,6 +19,19 @@ class AuthStorageClient {
   String get _sessionKey => 'matrix_session_$profile';
 
   String get _storePassphraseKey => 'matrix_store_passphrase_$profile';
+  String get _deviceIdKey => 'matrix_device_id_$profile';
+
+  Future<String?> getDeviceId() async {
+    return _storage.read(key: _deviceIdKey);
+  }
+
+  Future<void> salvarDeviceId(String deviceId) async {
+    await _storage.write(key: _deviceIdKey, value: deviceId);
+  }
+
+  Future<void> removerDeviceId() async {
+    await _storage.delete(key: _deviceIdKey);
+  }
 
   Future<String?> getSession() async {
     return _storage.read(key: _sessionKey);

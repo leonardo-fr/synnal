@@ -68,7 +68,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => -475589570;
+  int get rustContentHash => 1797986804;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -92,6 +92,7 @@ abstract class RustLibApi extends BaseApi {
     required MatrixClient that,
     required String username,
     required String password,
+    String? deviceId,
   });
 
   Future<void> crateApiClientMatrixClientLogout({required MatrixClient that});
@@ -132,6 +133,7 @@ abstract class RustLibApi extends BaseApi {
     required MatrixService that,
     required String username,
     required String password,
+    String? deviceId,
   });
 
   Future<void> crateApiMatrixMatrixServiceLogout({required MatrixService that});
@@ -141,6 +143,10 @@ abstract class RustLibApi extends BaseApi {
     required String username,
     required String password,
     required String displayName,
+  });
+
+  Future<void> crateApiMatrixMatrixServiceResetClient({
+    required MatrixService that,
   });
 
   Future<void> crateApiMatrixMatrixServiceRestore({
@@ -255,6 +261,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required MatrixClient that,
     required String username,
     required String password,
+    String? deviceId,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -266,6 +273,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
           sse_encode_String(username, serializer);
           sse_encode_String(password, serializer);
+          sse_encode_opt_String(deviceId, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -278,7 +286,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_String,
         ),
         constMeta: kCrateApiClientMatrixClientLoginPasswordConstMeta,
-        argValues: [that, username, password],
+        argValues: [that, username, password, deviceId],
         apiImpl: this,
       ),
     );
@@ -287,7 +295,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateApiClientMatrixClientLoginPasswordConstMeta =>
       const TaskConstMeta(
         debugName: "MatrixClient_login_password",
-        argNames: ["that", "username", "password"],
+        argNames: ["that", "username", "password", "deviceId"],
       );
 
   @override
@@ -534,7 +542,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_bool,
-          decodeErrorData: null,
+          decodeErrorData: sse_decode_String,
         ),
         constMeta: kCrateApiMatrixMatrixServiceIsLoggedInConstMeta,
         argValues: [that],
@@ -554,6 +562,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required MatrixService that,
     required String username,
     required String password,
+    String? deviceId,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -565,6 +574,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
           sse_encode_String(username, serializer);
           sse_encode_String(password, serializer);
+          sse_encode_opt_String(deviceId, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -577,7 +587,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_String,
         ),
         constMeta: kCrateApiMatrixMatrixServiceLoginConstMeta,
-        argValues: [that, username, password],
+        argValues: [that, username, password, deviceId],
         apiImpl: this,
       ),
     );
@@ -586,7 +596,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateApiMatrixMatrixServiceLoginConstMeta =>
       const TaskConstMeta(
         debugName: "MatrixService_login",
-        argNames: ["that", "username", "password"],
+        argNames: ["that", "username", "password", "deviceId"],
       );
 
   @override
@@ -668,6 +678,42 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<void> crateApiMatrixMatrixServiceResetClient({
+    required MatrixService that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMatrixService(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 14,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiMatrixMatrixServiceResetClientConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiMatrixMatrixServiceResetClientConstMeta =>
+      const TaskConstMeta(
+        debugName: "MatrixService_reset_client",
+        argNames: ["that"],
+      );
+
+  @override
   Future<void> crateApiMatrixMatrixServiceRestore({
     required MatrixService that,
     required String sessionJson,
@@ -684,7 +730,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 14,
+            funcId: 15,
             port: port_,
           );
         },
@@ -712,7 +758,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(name, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 16)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -737,7 +783,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 16,
+            funcId: 17,
             port: port_,
           );
         },
@@ -1155,10 +1201,12 @@ class MatrixClientImpl extends RustOpaque implements MatrixClient {
   Future<String> loginPassword({
     required String username,
     required String password,
+    String? deviceId,
   }) => RustLib.instance.api.crateApiClientMatrixClientLoginPassword(
     that: this,
     username: username,
     password: password,
+    deviceId: deviceId,
   );
 
   Future<void> logout() =>
@@ -1207,12 +1255,16 @@ class MatrixServiceImpl extends RustOpaque implements MatrixService {
   Future<bool> isLoggedIn() =>
       RustLib.instance.api.crateApiMatrixMatrixServiceIsLoggedIn(that: this);
 
-  Future<String> login({required String username, required String password}) =>
-      RustLib.instance.api.crateApiMatrixMatrixServiceLogin(
-        that: this,
-        username: username,
-        password: password,
-      );
+  Future<String> login({
+    required String username,
+    required String password,
+    String? deviceId,
+  }) => RustLib.instance.api.crateApiMatrixMatrixServiceLogin(
+    that: this,
+    username: username,
+    password: password,
+    deviceId: deviceId,
+  );
 
   Future<void> logout() =>
       RustLib.instance.api.crateApiMatrixMatrixServiceLogout(that: this);
@@ -1227,6 +1279,14 @@ class MatrixServiceImpl extends RustOpaque implements MatrixService {
     password: password,
     displayName: displayName,
   );
+
+  /// Descarta completamente o Client atual e cria outro.
+  ///
+  /// Isso é necessário quando uma sessão restaurada fica inválida,
+  /// pois o Matrix SDK não permite substituir a autenticação de um
+  /// Client que já teve uma sessão configurada.
+  Future<void> resetClient() =>
+      RustLib.instance.api.crateApiMatrixMatrixServiceResetClient(that: this);
 
   Future<void> restore({required String sessionJson}) => RustLib.instance.api
       .crateApiMatrixMatrixServiceRestore(that: this, sessionJson: sessionJson);

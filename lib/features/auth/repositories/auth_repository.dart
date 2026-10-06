@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:synnal/features/auth/clients/auth_storage_client.dart';
 import 'package:synnal/features/auth/clients/matrix_auth_client.dart';
 import 'package:synnal/features/auth/models/auth_session.dart';
@@ -8,12 +10,18 @@ class AuthRepository {
 
   AuthRepository(this._matrixAuthClient, this._authStorageClient);
 
-  Future<AuthSession> entrar(String username, String password) async {
-    try {
-      return await _entrarComRetry(username, password);
-    } catch (e) {
-      rethrow;
-    }
+  static const _timeoutEntrar = Duration(seconds: 30);
+
+  Future<AuthSession> entrar(String username, String password) {
+    return _entrarComRetry(username, password).timeout(
+      _timeoutEntrar,
+      onTimeout: () {
+        throw TimeoutException(
+          'Tempo limite excedido ao realizar login.',
+          _timeoutEntrar,
+        );
+      },
+    );
   }
 
   Future<AuthSession> _entrarComRetry(String username, String password) async {
@@ -24,7 +32,13 @@ class AuthRepository {
 
     for (var tentativa = 1; tentativa <= totalTentativas; tentativa++) {
       try {
-        final rawSession = await _matrixAuthClient.login(username, password);
+        final deviceId = await _authStorageClient.getDeviceId();
+
+        final rawSession = await _matrixAuthClient.login(
+          username,
+          password,
+          deviceId: deviceId,
+        );
 
         await _authStorageClient.salvarSession(rawSession);
 

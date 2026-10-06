@@ -54,26 +54,36 @@ impl MatrixClient {
         &self,
         username: String,
         password: String,
+        device_id: Option<String>,
     ) -> Result<String, String> {
         let _guard = self.auth_lock.lock().await;
 
         let auth = self.client.matrix_auth();
 
-        if let Some(session) = auth.session() {
-            return serde_json::to_string(&session)
-                .map_err(|e| e.to_string());
+        if auth.session().is_some() {
+            return Err(
+                "MatrixClient já possui uma sessão; recrie o client antes de fazer login."
+                    .to_string(),
+            );
         }
 
-        auth.login_username(
-            &username,
-            &password,
-        )
-        .initial_device_display_name(
-            "Synnal Desktop",
-        )
-        .send()
-        .await
-        .map_err(|e| e.to_string())?;
+        let mut login = auth
+            .login_username(
+                &username,
+                &password,
+            )
+            .initial_device_display_name(
+                "Synnal Desktop",
+            );
+
+        if let Some(device_id) = device_id {
+            login = login.device_id(&device_id);
+        }
+
+        login
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
 
         let session = auth
             .session()
@@ -129,7 +139,7 @@ impl MatrixClient {
 
         let auth =
             self.client.matrix_auth();
-            
+
         if auth.session().is_some() {
             return Err(
                 "O cliente Matrix já possui uma sessão. \

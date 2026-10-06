@@ -5,8 +5,16 @@ class MatrixAuthClient {
 
   MatrixAuthClient(this._matrixService);
 
-  Future<String> login(String username, String password) async {
-    return _matrixService.login(username: username, password: password);
+  Future<String> login(
+    String username,
+    String password, {
+    String? deviceId,
+  }) async {
+    return _matrixService.login(
+      username: username,
+      password: password,
+      deviceId: deviceId,
+    );
   }
 
   Future<void> restaurarSessao(String session) async {
