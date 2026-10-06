@@ -11,6 +11,8 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MatrixService>>
 abstract class MatrixService implements RustOpaqueInterface {
+  Future<void> clearRooms();
+
   static Future<MatrixService> create({
     required String homeserver,
     required String storePath,
@@ -26,11 +28,15 @@ abstract class MatrixService implements RustOpaqueInterface {
     required List<String> invitedUserIds,
   });
 
+  Future<void> deleteRoom({required String roomId});
+
   Future<String?> getDisplayName();
 
   Future<bool> isLoggedIn();
 
   Future<MatrixRoomSummary> joinInvitedRoom({required String roomId});
+
+  Future<List<MatrixChatMessage>> listMessages({required String roomId});
 
   Future<MatrixRoomsSnapshot> listRooms();
 
@@ -48,12 +54,20 @@ abstract class MatrixService implements RustOpaqueInterface {
     required String displayName,
   });
 
-  /// Descarta completamente o Client atual e cria outro.
+  /// Descarta completamente o Client atual
+  /// e cria outro.
   ///
-  /// Isso é necessário quando uma sessão restaurada fica inválida,
-  /// pois o Matrix SDK não permite substituir a autenticação de um
-  /// Client que já teve uma sessão configurada.
+  /// Isso é necessário quando uma sessão
+  /// restaurada fica inválida, pois o Matrix SDK
+  /// não permite substituir a autenticação de
+  /// um Client que já teve sessão configurada.
   Future<void> resetClient();
 
   Future<void> restore({required String sessionJson});
+
+  Future<void> sendMessage({required String roomId, required String body});
+
+  Stream<List<MatrixChatMessage>> watchMessages({required String roomId});
+
+  Stream<MatrixRoomsSnapshot> watchRooms();
 }

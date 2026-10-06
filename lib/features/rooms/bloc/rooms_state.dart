@@ -34,9 +34,12 @@ abstract class RoomsState {
     String? userId,
     String? deviceId,
     String? displayName,
+    bool? limparSelecao,
   }) : rooms = rooms ?? lastState.rooms,
        invitedRooms = invitedRooms ?? lastState.invitedRooms,
-       selectedRoomId = selectedRoomId ?? lastState.selectedRoomId,
+       selectedRoomId = limparSelecao == true
+           ? null
+           : selectedRoomId ?? lastState.selectedRoomId,
        userId = userId ?? lastState.userId,
        deviceId = deviceId ?? lastState.deviceId,
        displayName = displayName ?? lastState.displayName;
@@ -79,6 +82,7 @@ class RoomsCarregarSucesso extends RoomsState {
     required super.userId,
     required super.deviceId,
     required super.displayName,
+    super.limparSelecao,
   }) : super.fromLastState();
 }
 
@@ -126,4 +130,38 @@ class RoomConviteAceitarSucesso extends RoomsState {
 class RoomConviteAceitarFalha extends RoomsState {
   RoomConviteAceitarFalha.fromLastState(super.lastState)
     : super.fromLastState();
+}
+
+class RoomApagarEmProgresso extends RoomsState {
+  RoomApagarEmProgresso.fromLastState(super.lastState) : super.fromLastState();
+}
+
+class RoomApagarSucesso extends RoomsState {
+  RoomApagarSucesso.fromLastState(
+    super.lastState, {
+    required super.rooms,
+    required super.invitedRooms,
+    super.limparSelecao,
+  }) : super.fromLastState();
+}
+
+class RoomApagarFalha extends RoomsState {
+  RoomApagarFalha.fromLastState(super.lastState) : super.fromLastState();
+}
+
+class RoomsLimparEmProgresso extends RoomsState {
+  RoomsLimparEmProgresso.fromLastState(super.lastState) : super.fromLastState();
+}
+
+class RoomsLimparSucesso extends RoomsState {
+  RoomsLimparSucesso.fromLastState(
+    super.lastState, {
+    required super.rooms,
+    required super.invitedRooms,
+    super.limparSelecao,
+  }) : super.fromLastState();
+}
+
+class RoomsLimparFalha extends RoomsState {
+  RoomsLimparFalha.fromLastState(super.lastState) : super.fromLastState();
 }

@@ -34,3 +34,19 @@ class RoomConviteAceito extends RoomsEvent {
 
   const RoomConviteAceito(this.roomId);
 }
+
+class RoomApagada extends RoomsEvent {
+  final String roomId;
+
+  const RoomApagada(this.roomId);
+}
+
+class RoomsLimpas extends RoomsEvent {
+  const RoomsLimpas();
+}
+
+class RoomsAtualizadas extends RoomsEvent {
+  final RoomsSnapshot snapshot;
+
+  const RoomsAtualizadas(this.snapshot);
+}
