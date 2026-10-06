@@ -41,13 +41,13 @@ class _ErrorState extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text('Não foi possível carregar a sessão.'),
+        const Text('Clique no botão a seguir para carregar a sessão anterior.'),
         const SizedBox(height: 16),
         FilledButton(
           onPressed: () {
             context.read<AuthBloc>().add(const AuthIniciou());
           },
-          child: const Text('Tentar novamente'),
+          child: const Text('Acessar'),
         ),
         const SizedBox(height: 8),
         TextButton(
@@ -56,7 +56,7 @@ class _ErrorState extends StatelessWidget {
               context,
             ).pushNamedAndRemoveUntil('/login', (_) => false);
           },
-          child: const Text('Ir para login'),
+          child: const Text('Ir para o login'),
         ),
       ],
     );

@@ -12,13 +12,16 @@ environment:
 dependencies:
   flutter_rust_bridge: 2.13.0
   flutter_secure_storage: ^11.2.0
-  path_provider: ^2.1.6
+  path_provider: ^2.0.11
   flutter_bloc: ^9.1.1
   flutter:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
   flutter_rust_bridge_hooks: 2.13.0
+
+dependency_overrides:
+  path_provider_foundation: 2.5.1
 
 dev_dependencies:
   flutter_test:
