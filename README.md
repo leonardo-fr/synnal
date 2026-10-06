@@ -447,3 +447,27 @@ A few resources to get started with Flutter:
 
 For additional Flutter documentation, see the
 [official Flutter documentation](https://docs.flutter.dev/).
+
+## Perfis de desenvolvimento
+Durante os testes locais, utilize os seguintes usuários Matrix para cada profile:
+```text
+usuarioA -> userteste
+usuarioB -> user_b
+usuarioC -> user_c
+```
+
+## Problemas com crypto store
+Caso ocorram problemas relacionados ao crypto store, primeiro localize os stores existentes:
+```bash
+find ~/Library \
+  -type d \
+  -name 'matrix-store-*' 2>/dev/null
+```
+
+Se necessário, remova os stores locais dos profiles de desenvolvimento (MacOS):
+```bash
+rm -rf \
+"/Users/frreserve/Library/Containers/com.example.synnal/Data/Library/Application Support/com.example.synnal/matrix-store-usuarioA" \
+"/Users/frreserve/Library/Containers/com.example.synnal/Data/Library/Application Support/com.example.synnal/matrix-store-usuarioB" \
+"/Users/frreserve/Library/Containers/com.example.synnal/Data/Library/Application Support/com.example.synnal/matrix-store-usuarioC"
+```
