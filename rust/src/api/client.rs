@@ -1,12 +1,16 @@
 use matrix_sdk::{
     authentication::matrix::MatrixSession,
-    ruma::api::client::{
-        account::register::v3::Request
-            as RegistrationRequest,
-        uiaa::{
-            AuthData,
-            Dummy,
+    config::SyncSettings,
+    ruma::{
+        api::client::{
+            account::register::v3::Request as RegistrationRequest,
+            room::{
+                create_room::v3::{Request as CreateRoomRequest, RoomPreset},
+                Visibility,
+            },
+            uiaa::{AuthData, Dummy},
         },
+        OwnedRoomId, OwnedUserId,
     },
     store::RoomLoadSettings,
     Client,
@@ -14,23 +18,32 @@ use matrix_sdk::{
 
 use tokio::sync::Mutex;
 
-pub struct MatrixClient {
+#[derive(Clone, Debug)]
+pub struct MatrixRoomSummary {
+    pub room_id: String,
+    pub name: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct MatrixRoomsSnapshot {
+    pub rooms: Vec<MatrixRoomSummary>,
+    pub invited_rooms: Vec<MatrixRoomSummary>,
+}
+
+pub(super) struct MatrixClient {
     client: Client,
     auth_lock: Mutex<()>,
 }
 
 impl MatrixClient {
-    pub async fn new(
+    pub(super) async fn new(
         homeserver: String,
         store_path: String,
         store_passphrase: String,
     ) -> Result<Self, String> {
         let client = Client::builder()
             .homeserver_url(&homeserver)
-            .sqlite_store(
-                &store_path,
-                Some(&store_passphrase),
-            )
+            .sqlite_store(&store_path, Some(&store_passphrase))
             .build()
             .await
             .map_err(|e| e.to_string())?;
@@ -40,9 +53,8 @@ impl MatrixClient {
             auth_lock: Mutex::new(()),
         })
     }
-    pub async fn get_display_name(
-        &self,
-    ) -> Result<Option<String>, String> {
+
+    pub(super) async fn get_display_name(&self) -> Result<Option<String>, String> {
         self.client
             .account()
             .get_display_name()
@@ -50,7 +62,7 @@ impl MatrixClient {
             .map_err(|e| e.to_string())
     }
 
-    pub async fn login_password(
+    pub(super) async fn login_password(
         &self,
         username: String,
         password: String,
@@ -68,37 +80,23 @@ impl MatrixClient {
         }
 
         let mut login = auth
-            .login_username(
-                &username,
-                &password,
-            )
-            .initial_device_display_name(
-                "Synnal Desktop",
-            );
+            .login_username(&username, &password)
+            .initial_device_display_name("Synnal Desktop");
 
         if let Some(device_id) = device_id {
             login = login.device_id(&device_id);
         }
 
-        login
-            .send()
-            .await
-            .map_err(|e| e.to_string())?;
+        login.send().await.map_err(|e| e.to_string())?;
 
         let session = auth
             .session()
-            .ok_or_else(|| {
-                "Sessão indisponível após login".to_string()
-            })?;
+            .ok_or_else(|| "Sessão indisponível após login".to_string())?;
 
-        serde_json::to_string(&session)
-            .map_err(|e| e.to_string())
+        serde_json::to_string(&session).map_err(|e| e.to_string())
     }
 
-    pub async fn restore_session(
-        &self,
-        session_json: String,
-    ) -> Result<(), String> {
+    pub(super) async fn restore_session(&self, session_json: String) -> Result<(), String> {
         let _guard = self.auth_lock.lock().await;
 
         let auth = self.client.matrix_auth();
@@ -109,74 +107,43 @@ impl MatrixClient {
         }
 
         let session: MatrixSession =
-            serde_json::from_str(
-                &session_json,
-            )
-            .map_err(|e| e.to_string())?;
+            serde_json::from_str(&session_json).map_err(|e| e.to_string())?;
 
-        auth.restore_session(
-            session,
-            RoomLoadSettings::default(),
-        )
-        .await
-        .map_err(|e| e.to_string())
+        auth.restore_session(session, RoomLoadSettings::default())
+            .await
+            .map_err(|e| e.to_string())
     }
 
-    pub fn is_logged_in(&self) -> bool {
-        self.client
-            .matrix_auth()
-            .logged_in()
+    pub(super) fn is_logged_in(&self) -> bool {
+        self.client.matrix_auth().logged_in()
     }
 
-    pub async fn register_user(
+    pub(super) async fn register_user(
         &self,
         username: String,
         password: String,
         display_name: String,
     ) -> Result<String, String> {
-        let _guard =
-            self.auth_lock.lock().await;
+        let _guard = self.auth_lock.lock().await;
 
-        let auth =
-            self.client.matrix_auth();
+        let auth = self.client.matrix_auth();
 
         if auth.session().is_some() {
-            return Err(
-                "O cliente Matrix já possui uma sessão. \
+            return Err("O cliente Matrix já possui uma sessão. \
                 É necessário recriar o MatrixClient antes \
                 de cadastrar outro usuário."
-                    .to_string(),
-            );
+                .to_string());
         }
 
         // Primeira tentativa de cadastro.
-        let mut request =
-            RegistrationRequest::new();
+        let mut request = RegistrationRequest::new();
 
-        request.username =
-            Some(
-                username.clone(),
-            );
+        request.username = Some(username.clone());
+        request.password = Some(password.clone());
+        request.initial_device_display_name = Some("Synnal Desktop".to_string());
+        request.refresh_token = false;
 
-        request.password =
-            Some(
-                password.clone(),
-            );
-
-        request.initial_device_display_name =
-            Some(
-                "Synnal Desktop"
-                    .to_string(),
-            );
-
-        request.refresh_token =
-            false;
-
-        let resultado =
-            auth.register(
-                request,
-            )
-            .await;
+        let resultado = auth.register(request).await;
 
         match resultado {
             Ok(_) => {
@@ -186,105 +153,54 @@ impl MatrixClient {
             Err(error) => {
                 // O Synapse pode exigir UIAA,
                 // normalmente usando m.login.dummy.
-                let uiaa =
-                    match error
-                        .as_uiaa_response()
-                    {
-                        Some(uiaa) =>
-                            uiaa,
+                let uiaa = match error.as_uiaa_response() {
+                    Some(uiaa) => uiaa,
 
-                        None => {
-                            return Err(
-                                error.to_string(),
-                            );
-                        }
-                    };
+                    None => {
+                        return Err(error.to_string());
+                    }
+                };
 
-                let mut dummy =
-                    Dummy::new();
+                let mut dummy = Dummy::new();
 
-                dummy.session =
-                    uiaa.session.clone();
+                dummy.session = uiaa.session.clone();
 
-                let mut request =
-                    RegistrationRequest::new();
+                let mut request = RegistrationRequest::new();
 
-                request.username =
-                    Some(
-                        username,
-                    );
+                request.username = Some(username);
+                request.password = Some(password);
+                request.initial_device_display_name = Some("Synnal Desktop".to_string());
+                request.refresh_token = false;
+                request.auth = Some(AuthData::Dummy(dummy));
 
-                request.password =
-                    Some(
-                        password,
-                    );
-
-                request.initial_device_display_name =
-                    Some(
-                        "Synnal Desktop"
-                            .to_string(),
-                    );
-
-                request.refresh_token =
-                    false;
-
-                request.auth =
-                    Some(
-                        AuthData::Dummy(
-                            dummy,
-                        ),
-                    );
-
-                auth.register(
-                    request,
-                )
-                .await
-                .map_err(
-                    |e| e.to_string(),
-                )?;
+                auth.register(request).await.map_err(|e| e.to_string())?;
             }
         }
 
         // Neste ponto o register() já deve ter
         // configurado a sessão do Client.
-        let session =
-            auth.session()
-                .ok_or_else(|| {
-                    "Usuário criado, mas nenhuma sessão foi retornada"
-                        .to_string()
-                })?;
+        let session = auth
+            .session()
+            .ok_or_else(|| "Usuário criado, mas nenhuma sessão foi retornada".to_string())?;
 
         // O nome não faz parte do RegistrationRequest.
         // Ele é configurado no perfil depois que
         // a conta está autenticada.
         self.client
             .account()
-            .set_display_name(
-                Some(
-                    display_name.as_str(),
-                ),
-            )
+            .set_display_name(Some(display_name.as_str()))
             .await
-            .map_err(
-                |e| {
-                    format!(
-                        "Usuário criado, mas não foi possível \
+            .map_err(|e| {
+                format!(
+                    "Usuário criado, mas não foi possível \
                         definir o nome de exibição: {e}"
-                    )
-                },
-            )?;
+                )
+            })?;
 
-        serde_json::to_string(
-            &session,
-        )
-        .map_err(
-            |e| e.to_string(),
-        )
+        serde_json::to_string(&session).map_err(|e| e.to_string())
     }
 
-    pub async fn logout(
-        &self,
-    ) -> Result<(), String> {
+    pub(super) async fn logout(&self) -> Result<(), String> {
         let _guard = self.auth_lock.lock().await;
 
         let auth = self.client.matrix_auth();
@@ -293,9 +209,130 @@ impl MatrixClient {
             return Ok(());
         }
 
+        self.client.logout().await.map_err(|e| e.to_string())
+    }
+
+    pub(super) async fn list_rooms(&self) -> Result<MatrixRoomsSnapshot, String> {
         self.client
-            .logout()
+            .sync_once(SyncSettings::default())
             .await
-            .map_err(|e| e.to_string())
+            .map_err(|e| e.to_string())?;
+
+        let mut rooms = Vec::new();
+
+        for room in self.client.joined_rooms() {
+            let name = match room.name() {
+                Some(name) if !name.trim().is_empty() => name,
+
+                _ => room
+                    .display_name()
+                    .await
+                    .map_err(|e| e.to_string())?
+                    .to_string(),
+            };
+
+            rooms.push(MatrixRoomSummary {
+                room_id: room.room_id().to_string(),
+                name,
+            });
+        }
+
+        let mut invited_rooms = Vec::new();
+
+        for room in self.client.invited_rooms() {
+            let name = match room.name() {
+                Some(name) if !name.trim().is_empty() => name,
+
+                _ => room
+                    .display_name()
+                    .await
+                    .map_err(|e| e.to_string())?
+                    .to_string(),
+            };
+
+            invited_rooms.push(MatrixRoomSummary {
+                room_id: room.room_id().to_string(),
+                name,
+            });
+        }
+
+        rooms.sort_by_key(|room| room.name.to_lowercase());
+
+        invited_rooms.sort_by_key(|room| room.name.to_lowercase());
+
+        Ok(MatrixRoomsSnapshot {
+            rooms,
+            invited_rooms,
+        })
+    }
+
+    pub(super) async fn create_private_room(
+        &self,
+        name: String,
+        invited_user_ids: Vec<String>,
+    ) -> Result<MatrixRoomSummary, String> {
+        if invited_user_ids.is_empty() {
+            return Err("Informe pelo menos um usuário para convidar.".to_string());
+        }
+
+        let invited_users = invited_user_ids
+            .into_iter()
+            .map(|user_id| {
+                user_id
+                    .parse::<OwnedUserId>()
+                    .map_err(|e| format!("ID Matrix inválido '{user_id}': {e}"))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        let mut request = CreateRoomRequest::new();
+
+        request.name = Some(name.clone());
+
+        request.preset = Some(RoomPreset::PrivateChat);
+
+        request.visibility = Visibility::Private;
+
+        request.invite = invited_users;
+
+        let room = self
+            .client
+            .create_room(request)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        Ok(MatrixRoomSummary {
+            room_id: room.room_id().to_string(),
+            name,
+        })
+    }
+
+    pub(super) async fn join_invited_room(
+        &self,
+        room_id: String,
+    ) -> Result<MatrixRoomSummary, String> {
+        let room_id = room_id
+            .parse::<OwnedRoomId>()
+            .map_err(|e| format!("Room ID inválido '{room_id}': {e}"))?;
+
+        let room = self
+            .client
+            .join_room_by_id(&room_id)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        let name = match room.name() {
+            Some(name) if !name.trim().is_empty() => name,
+
+            _ => room
+                .display_name()
+                .await
+                .map_err(|e| e.to_string())?
+                .to_string(),
+        };
+
+        Ok(MatrixRoomSummary {
+            room_id: room.room_id().to_string(),
+            name,
+        })
     }
 }

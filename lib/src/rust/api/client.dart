@@ -6,36 +6,42 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MatrixClient>>
-abstract class MatrixClient implements RustOpaqueInterface {
-  Future<String?> getDisplayName();
+// These functions are ignored because they are not marked as `pub`: `create_private_room`, `get_display_name`, `is_logged_in`, `join_invited_room`, `list_rooms`, `login_password`, `logout`, `new`, `register_user`, `restore_session`
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `MatrixClient`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `fmt`, `fmt`
 
-  Future<bool> isLoggedIn();
+class MatrixRoomSummary {
+  final String roomId;
+  final String name;
 
-  Future<String> loginPassword({
-    required String username,
-    required String password,
-    String? deviceId,
-  });
+  const MatrixRoomSummary({required this.roomId, required this.name});
 
-  Future<void> logout();
+  @override
+  int get hashCode => roomId.hashCode ^ name.hashCode;
 
-  // HINT: Make it `#[frb(sync)]` to let it become the default constructor of Dart class.
-  static Future<MatrixClient> newInstance({
-    required String homeserver,
-    required String storePath,
-    required String storePassphrase,
-  }) => RustLib.instance.api.crateApiClientMatrixClientNew(
-    homeserver: homeserver,
-    storePath: storePath,
-    storePassphrase: storePassphrase,
-  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MatrixRoomSummary &&
+          runtimeType == other.runtimeType &&
+          roomId == other.roomId &&
+          name == other.name;
+}
 
-  Future<String> registerUser({
-    required String username,
-    required String password,
-    required String displayName,
-  });
+class MatrixRoomsSnapshot {
+  final List<MatrixRoomSummary> rooms;
+  final List<MatrixRoomSummary> invitedRooms;
 
-  Future<void> restoreSession({required String sessionJson});
+  const MatrixRoomsSnapshot({required this.rooms, required this.invitedRooms});
+
+  @override
+  int get hashCode => rooms.hashCode ^ invitedRooms.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MatrixRoomsSnapshot &&
+          runtimeType == other.runtimeType &&
+          rooms == other.rooms &&
+          invitedRooms == other.invitedRooms;
 }

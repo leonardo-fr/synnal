@@ -7,6 +7,8 @@ import 'package:synnal/features/auth/bloc/auth_bloc.dart';
 import 'package:synnal/features/auth/clients/auth_storage_client.dart';
 import 'package:synnal/features/auth/clients/matrix_auth_client.dart';
 import 'package:synnal/features/auth/repositories/auth_repository.dart';
+import 'package:synnal/features/rooms/clients/matrix_rooms_client.dart';
+import 'package:synnal/features/rooms/repositories/rooms_repository.dart';
 
 import 'package:synnal/src/rust/api/matrix.dart' as rust_matrix;
 
@@ -39,6 +41,18 @@ class App extends StatelessWidget {
     );
   }
 
+  RepositoryProvider<MatrixRoomsClient> _matrixRoomsClientProvider() {
+    return RepositoryProvider(
+      create: (context) => MatrixRoomsClient(matrixService),
+    );
+  }
+
+  RepositoryProvider<RoomsRepository> _roomsRepositoryProvider() {
+    return RepositoryProvider(
+      create: (context) => RoomsRepository(context.read<MatrixRoomsClient>()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
@@ -46,6 +60,8 @@ class App extends StatelessWidget {
         _matrixAuthClientProvider(),
         _authStorageClientProvider(),
         _authRepositoryProvider(),
+        _matrixRoomsClientProvider(),
+        _roomsRepositoryProvider(),
 
         // demais repositories...
       ],
