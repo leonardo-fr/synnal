@@ -40,7 +40,11 @@ class AuthRepository {
           deviceId: deviceId,
         );
 
+        final session = AuthSession.fromRawSession(rawSession);
+
         await _authStorageClient.salvarSession(rawSession);
+
+        await _authStorageClient.salvarDeviceId(session.deviceId);
 
         final displayName = await _matrixAuthClient.obterNomeUsuario();
 
@@ -155,9 +159,13 @@ class AuthRepository {
       nome,
     );
 
+    final session = AuthSession.fromRawSession(rawSession, displayName: nome);
+
     await _authStorageClient.salvarSession(rawSession);
 
-    return AuthSession.fromRawSession(rawSession, displayName: nome);
+    await _authStorageClient.salvarDeviceId(session.deviceId);
+
+    return session;
   }
 
   Future<void> sair() async {
