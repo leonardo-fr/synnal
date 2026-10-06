@@ -46,6 +46,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  RustStreamSink<List<MatrixChatMessage>>
+  dco_decode_StreamSink_list_matrix_chat_message_Sse(dynamic raw);
+
+  @protected
   RustStreamSink<MatrixRoomsSnapshot>
   dco_decode_StreamSink_matrix_rooms_snapshot_Sse(dynamic raw);
 
@@ -56,13 +60,22 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool dco_decode_bool(dynamic raw);
 
   @protected
+  PlatformInt64 dco_decode_i_64(dynamic raw);
+
+  @protected
   List<String> dco_decode_list_String(dynamic raw);
+
+  @protected
+  List<MatrixChatMessage> dco_decode_list_matrix_chat_message(dynamic raw);
 
   @protected
   List<MatrixRoomSummary> dco_decode_list_matrix_room_summary(dynamic raw);
 
   @protected
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
+
+  @protected
+  MatrixChatMessage dco_decode_matrix_chat_message(dynamic raw);
 
   @protected
   MatrixRoomSummary dco_decode_matrix_room_summary(dynamic raw);
@@ -104,6 +117,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  RustStreamSink<List<MatrixChatMessage>>
+  sse_decode_StreamSink_list_matrix_chat_message_Sse(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   RustStreamSink<MatrixRoomsSnapshot>
   sse_decode_StreamSink_matrix_rooms_snapshot_Sse(SseDeserializer deserializer);
 
@@ -114,7 +133,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
+  PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
+
+  @protected
   List<String> sse_decode_list_String(SseDeserializer deserializer);
+
+  @protected
+  List<MatrixChatMessage> sse_decode_list_matrix_chat_message(
+    SseDeserializer deserializer,
+  );
 
   @protected
   List<MatrixRoomSummary> sse_decode_list_matrix_room_summary(
@@ -123,6 +150,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
+
+  @protected
+  MatrixChatMessage sse_decode_matrix_chat_message(
+    SseDeserializer deserializer,
+  );
 
   @protected
   MatrixRoomSummary sse_decode_matrix_room_summary(
@@ -177,6 +209,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_StreamSink_list_matrix_chat_message_Sse(
+    RustStreamSink<List<MatrixChatMessage>> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_StreamSink_matrix_rooms_snapshot_Sse(
     RustStreamSink<MatrixRoomsSnapshot> self,
     SseSerializer serializer,
@@ -189,7 +227,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_bool(bool self, SseSerializer serializer);
 
   @protected
+  void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
+
+  @protected
   void sse_encode_list_String(List<String> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_matrix_chat_message(
+    List<MatrixChatMessage> self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_list_matrix_room_summary(
@@ -200,6 +247,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_list_prim_u_8_strict(
     Uint8List self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_matrix_chat_message(
+    MatrixChatMessage self,
     SseSerializer serializer,
   );
 

@@ -36,6 +36,8 @@ abstract class MatrixService implements RustOpaqueInterface {
 
   Future<MatrixRoomSummary> joinInvitedRoom({required String roomId});
 
+  Future<List<MatrixChatMessage>> listMessages({required String roomId});
+
   Future<MatrixRoomsSnapshot> listRooms();
 
   Future<String> login({
@@ -52,14 +54,20 @@ abstract class MatrixService implements RustOpaqueInterface {
     required String displayName,
   });
 
-  /// Descarta completamente o Client atual e cria outro.
+  /// Descarta completamente o Client atual
+  /// e cria outro.
   ///
-  /// Isso é necessário quando uma sessão restaurada fica inválida,
-  /// pois o Matrix SDK não permite substituir a autenticação de um
-  /// Client que já teve uma sessão configurada.
+  /// Isso é necessário quando uma sessão
+  /// restaurada fica inválida, pois o Matrix SDK
+  /// não permite substituir a autenticação de
+  /// um Client que já teve sessão configurada.
   Future<void> resetClient();
 
   Future<void> restore({required String sessionJson});
+
+  Future<void> sendMessage({required String roomId, required String body});
+
+  Stream<List<MatrixChatMessage>> watchMessages({required String roomId});
 
   Stream<MatrixRoomsSnapshot> watchRooms();
 }

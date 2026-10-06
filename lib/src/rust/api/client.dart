@@ -6,9 +6,44 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `clear_rooms`, `create_private_room`, `delete_room`, `get_display_name`, `is_logged_in`, `join_invited_room`, `list_rooms`, `login_password`, `logout`, `new`, `register_user`, `remove_room`, `restore_session`, `room_summary`, `rooms_snapshot`, `watch_rooms`
+// These functions are ignored because they are not marked as `pub`: `clear_rooms`, `create_private_room`, `delete_room`, `get_display_name`, `is_logged_in`, `join_invited_room`, `list_messages`, `list_rooms`, `login_password`, `logout`, `new`, `register_user`, `remove_room`, `restore_session`, `room_summary`, `rooms_snapshot`, `send_message`, `timeline_event_to_chat_message`, `watch_messages`, `watch_rooms`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `MatrixClient`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `fmt`, `fmt`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `fmt`, `fmt`, `fmt`
+
+class MatrixChatMessage {
+  final String eventId;
+  final String roomId;
+  final String senderId;
+  final String body;
+  final PlatformInt64 timestampMs;
+
+  const MatrixChatMessage({
+    required this.eventId,
+    required this.roomId,
+    required this.senderId,
+    required this.body,
+    required this.timestampMs,
+  });
+
+  @override
+  int get hashCode =>
+      eventId.hashCode ^
+      roomId.hashCode ^
+      senderId.hashCode ^
+      body.hashCode ^
+      timestampMs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MatrixChatMessage &&
+          runtimeType == other.runtimeType &&
+          eventId == other.eventId &&
+          roomId == other.roomId &&
+          senderId == other.senderId &&
+          body == other.body &&
+          timestampMs == other.timestampMs;
+}
 
 class MatrixRoomSummary {
   final String roomId;

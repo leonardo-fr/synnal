@@ -1,6 +1,9 @@
-use super::client::{MatrixClient, MatrixRoomSummary, MatrixRoomsSnapshot};
+use super::client::{MatrixChatMessage, MatrixClient, MatrixRoomSummary, MatrixRoomsSnapshot};
+
 use crate::frb_generated::StreamSink;
+
 use std::sync::Arc;
+
 use tokio::sync::RwLock;
 
 pub struct MatrixService {
@@ -40,16 +43,7 @@ impl MatrixService {
             .ok_or_else(|| "MatrixClient não está inicializado".to_string())
     }
 
-    /// Descarta completamente o Client atual e cria outro.
-    ///
-    /// Isso é necessário quando uma sessão restaurada fica inválida,
-    /// pois o Matrix SDK não permite substituir a autenticação de um
-    /// Client que já teve uma sessão configurada.
     pub async fn reset_client(&self) -> Result<(), String> {
-        // Primeiro remove o Client antigo.
-        //
-        // Isso garante que a sessão carregada em memória seja
-        // realmente descartada antes de criarmos outro Client.
         {
             let mut client = self.client.write().await;
 
@@ -118,10 +112,6 @@ impl MatrixService {
 
         let logout_result = client.logout().await;
 
-        // Independente de o servidor aceitar o logout ou não,
-        // descartamos o Client local.
-        //
-        // Isso também cobre casos como M_UNKNOWN_TOKEN.
         self.reset_client().await?;
 
         logout_result
@@ -161,5 +151,26 @@ impl MatrixService {
         let client = self.current_client().await?;
 
         client.watch_rooms(sink).await
+    }
+
+    pub async fn list_messages(&self, room_id: String) -> Result<Vec<MatrixChatMessage>, String> {
+        self.current_client().await?.list_messages(room_id).await
+    }
+
+    pub async fn send_message(&self, room_id: String, body: String) -> Result<(), String> {
+        self.current_client()
+            .await?
+            .send_message(room_id, body)
+            .await
+    }
+
+    pub async fn watch_messages(
+        &self,
+        room_id: String,
+        sink: StreamSink<Vec<MatrixChatMessage>>,
+    ) -> Result<(), String> {
+        let client = self.current_client().await?;
+
+        client.watch_messages(room_id, sink).await
     }
 }

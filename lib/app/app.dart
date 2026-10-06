@@ -7,6 +7,8 @@ import 'package:synnal/features/auth/bloc/auth_bloc.dart';
 import 'package:synnal/features/auth/clients/auth_storage_client.dart';
 import 'package:synnal/features/auth/clients/matrix_auth_client.dart';
 import 'package:synnal/features/auth/repositories/auth_repository.dart';
+import 'package:synnal/features/chat/clients/matrix_chat_client.dart';
+import 'package:synnal/features/chat/repositories/chat_repository.dart';
 import 'package:synnal/features/rooms/clients/matrix_rooms_client.dart';
 import 'package:synnal/features/rooms/repositories/rooms_repository.dart';
 
@@ -53,6 +55,12 @@ class App extends StatelessWidget {
     );
   }
 
+  RepositoryProvider<ChatRepository> _chatRepositoryProvider() {
+    return RepositoryProvider(
+      create: (context) => ChatRepository(MatrixChatClient(matrixService)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
@@ -62,8 +70,7 @@ class App extends StatelessWidget {
         _authRepositoryProvider(),
         _matrixRoomsClientProvider(),
         _roomsRepositoryProvider(),
-
-        // demais repositories...
+        _chatRepositoryProvider(),
       ],
       child: const AppView(),
     );

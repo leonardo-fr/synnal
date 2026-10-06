@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:synnal/features/auth/bloc/auth_bloc.dart';
+import 'package:synnal/features/chat/ui/widgets/chat_view.dart';
 import 'package:synnal/features/rooms/bloc/rooms_bloc.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -433,21 +434,18 @@ class HomeScreen extends StatelessWidget {
       return const Center(child: Text('Selecione uma sala'));
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(
-            room.name,
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-        ),
+    final userId = state.userId;
 
-        const Divider(height: 1),
+    if (userId == null) {
+      return const Center(child: Text('Usuário não autenticado.'));
+    }
 
-        const Expanded(child: Center(child: Text('Conteúdo da sala'))),
-      ],
+    return ChatView(
+      key: ValueKey(room.id),
+      roomId: room.id,
+      roomName: room.name,
+      currentUserId: userId,
+      participantCount: room.participantIds.length,
     );
   }
 

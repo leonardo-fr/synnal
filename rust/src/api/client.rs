@@ -5,6 +5,8 @@ use crate::frb_generated::StreamSink;
 use matrix_sdk::{
     authentication::matrix::MatrixSession,
     config::SyncSettings,
+    deserialized_responses::TimelineEvent,
+    room::MessagesOptions,
     ruma::{
         api::client::{
             account::register::v3::Request as RegistrationRequest,
@@ -14,13 +16,14 @@ use matrix_sdk::{
             },
             uiaa::{AuthData, Dummy},
         },
-        OwnedRoomId, OwnedUserId,
+        events::room::message::{OriginalSyncRoomMessageEvent, RoomMessageEventContent},
+        uint, OwnedRoomId, OwnedUserId,
     },
     store::RoomLoadSettings,
     Client, LoopCtrl,
 };
 
-use tokio::sync::Mutex;
+use tokio::sync::{mpsc, Mutex};
 
 #[derive(Clone, Debug)]
 pub struct MatrixRoomSummary {
@@ -34,6 +37,15 @@ pub struct MatrixRoomSummary {
 pub struct MatrixRoomsSnapshot {
     pub rooms: Vec<MatrixRoomSummary>,
     pub invited_rooms: Vec<MatrixRoomSummary>,
+}
+
+#[derive(Clone, Debug)]
+pub struct MatrixChatMessage {
+    pub event_id: String,
+    pub room_id: String,
+    pub sender_id: String,
+    pub body: String,
+    pub timestamp_ms: i64,
 }
 
 pub(super) struct MatrixClient {
@@ -57,6 +69,30 @@ impl MatrixClient {
         Ok(Self {
             client,
             auth_lock: Mutex::new(()),
+        })
+    }
+
+    fn timeline_event_to_chat_message(
+        room_id: &str,
+        event: &TimelineEvent,
+    ) -> Option<MatrixChatMessage> {
+        let event = event
+            .raw()
+            .deserialize_as_unchecked::<OriginalSyncRoomMessageEvent>()
+            .ok()?;
+
+        if event.content.msgtype() != "m.text" {
+            return None;
+        }
+
+        let timestamp_ms = u64::from(event.origin_server_ts.get()) as i64;
+
+        Some(MatrixChatMessage {
+            event_id: event.event_id.to_string(),
+            room_id: room_id.to_string(),
+            sender_id: event.sender.to_string(),
+            body: event.content.body().to_string(),
+            timestamp_ms,
         })
     }
 
@@ -138,7 +174,6 @@ impl MatrixClient {
 
         let auth = self.client.matrix_auth();
 
-        // Já existe sessão no client.
         if auth.session().is_some() {
             return Ok(());
         }
@@ -172,7 +207,6 @@ impl MatrixClient {
                 .to_string());
         }
 
-        // Primeira tentativa de cadastro.
         let mut request = RegistrationRequest::new();
 
         request.username = Some(username.clone());
@@ -183,13 +217,9 @@ impl MatrixClient {
         let resultado = auth.register(request).await;
 
         match resultado {
-            Ok(_) => {
-                // Cadastro realizado diretamente.
-            }
+            Ok(_) => {}
 
             Err(error) => {
-                // O Synapse pode exigir UIAA,
-                // normalmente usando m.login.dummy.
                 let uiaa = match error.as_uiaa_response() {
                     Some(uiaa) => uiaa,
 
@@ -214,15 +244,10 @@ impl MatrixClient {
             }
         }
 
-        // Neste ponto o register() já deve ter
-        // configurado a sessão do Client.
         let session = auth
             .session()
             .ok_or_else(|| "Usuário criado, mas nenhuma sessão foi retornada".to_string())?;
 
-        // O nome não faz parte do RegistrationRequest.
-        // Ele é configurado no perfil depois que
-        // a conta está autenticada.
         self.client
             .account()
             .set_display_name(Some(display_name.as_str()))
@@ -330,8 +355,6 @@ impl MatrixClient {
 
         room.leave().await.map_err(|e| e.to_string())?;
 
-        // Room::leave já esquece automaticamente
-        // uma sala que estava apenas como convite.
         if !was_invited {
             room.forget().await.map_err(|e| e.to_string())?;
         }
@@ -367,6 +390,130 @@ impl MatrixClient {
 
         Ok(())
     }
+    pub(super) async fn list_messages(
+        &self,
+        room_id: String,
+    ) -> Result<Vec<MatrixChatMessage>, String> {
+        let parsed_room_id = room_id
+            .parse::<OwnedRoomId>()
+            .map_err(|e| format!("Room ID inválido '{room_id}': {e}"))?;
+
+        let room = self
+            .client
+            .get_room(&parsed_room_id)
+            .ok_or_else(|| format!("Sala não encontrada: {room_id}"))?;
+
+        let mut options = MessagesOptions::backward();
+        options.limit = uint!(50);
+
+        let response = room
+            .messages(options)
+            .await
+            .map_err(|e| format!("Erro ao carregar mensagens: {e}"))?;
+
+        let mut messages = response
+            .chunk
+            .iter()
+            .filter_map(|event| Self::timeline_event_to_chat_message(&room_id, event))
+            .collect::<Vec<_>>();
+
+        messages.reverse();
+
+        Ok(messages)
+    }
+
+    pub(super) async fn send_message(&self, room_id: String, body: String) -> Result<(), String> {
+        let body = body.trim();
+
+        if body.is_empty() {
+            return Err("A mensagem não pode estar vazia.".to_string());
+        }
+
+        let parsed_room_id = room_id
+            .parse::<OwnedRoomId>()
+            .map_err(|e| format!("Room ID inválido '{room_id}': {e}"))?;
+
+        let room = self
+            .client
+            .get_room(&parsed_room_id)
+            .ok_or_else(|| format!("Sala não encontrada: {room_id}"))?;
+
+        let content = RoomMessageEventContent::text_plain(body);
+
+        room.send(content)
+            .await
+            .map_err(|e| format!("Erro ao enviar mensagem: {e}"))?;
+
+        Ok(())
+    }
+
+    pub(super) async fn watch_messages(
+        self: Arc<Self>,
+        room_id: String,
+        sink: StreamSink<Vec<MatrixChatMessage>>,
+    ) -> Result<(), String> {
+        let parsed_room_id = room_id
+            .parse::<OwnedRoomId>()
+            .map_err(|e| format!("Room ID inválido '{room_id}': {e}"))?;
+
+        let room = self
+            .client
+            .get_room(&parsed_room_id)
+            .ok_or_else(|| format!("Sala não encontrada: {room_id}"))?;
+
+        let mut messages = self.list_messages(room_id.clone()).await?;
+
+        if sink.add(messages.clone()).is_err() {
+            return Ok(());
+        }
+
+        let (sender, mut receiver) = mpsc::unbounded_channel::<MatrixChatMessage>();
+
+        let event_room_id = room_id.clone();
+
+        let handler = room.add_event_handler(move |event: OriginalSyncRoomMessageEvent| {
+            let sender = sender.clone();
+            let event_room_id = event_room_id.clone();
+
+            async move {
+                if event.content.msgtype() != "m.text" {
+                    return;
+                }
+
+                let timestamp_ms = u64::from(event.origin_server_ts.get()) as i64;
+
+                let message = MatrixChatMessage {
+                    event_id: event.event_id.to_string(),
+                    room_id: event_room_id,
+                    sender_id: event.sender.to_string(),
+                    body: event.content.body().to_string(),
+                    timestamp_ms,
+                };
+
+                let _ = sender.send(message);
+            }
+        });
+
+        while let Some(message) = receiver.recv().await {
+            let already_exists = messages
+                .iter()
+                .any(|item| item.event_id == message.event_id);
+
+            if !already_exists {
+                messages.push(message);
+                messages.sort_by_key(|message| message.timestamp_ms);
+            }
+
+            if sink.add(messages.clone()).is_err() {
+                break;
+            }
+        }
+
+        self.client.remove_event_handler(handler);
+
+        Ok(())
+    }
+
     async fn rooms_snapshot(&self) -> Result<MatrixRoomsSnapshot, String> {
         let mut rooms = Vec::new();
 
@@ -440,8 +587,6 @@ impl MatrixClient {
                     };
 
                     if sink.add(snapshot).is_err() {
-                        // O Flutter cancelou o stream,
-                        // por exemplo ao sair da conta.
                         return LoopCtrl::Break;
                     }
 
