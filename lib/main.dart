@@ -7,32 +7,29 @@ import 'package:synnal/src/rust/frb_generated.dart';
 
 import 'features/auth/clients/auth_storage_client.dart';
 
+const _profile = String.fromEnvironment(
+  'SYNNAL_PROFILE',
+  defaultValue: 'default',
+);
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await RustLib.init();
 
-final authStorageClient =
-    AuthStorageClient();
+  final authStorageClient = AuthStorageClient(profile: _profile);
 
-  final supportDirectory =
-      await getApplicationSupportDirectory();
+  final supportDirectory = await getApplicationSupportDirectory();
 
-  final storePassphrase =
-      await authStorageClient.getOrCreateStorePassphrase();
+  final storePassphrase = await authStorageClient.getOrCreateStorePassphrase();
 
-  final matrixService =
-      await rust_matrix.MatrixService.create(
+  final matrixService = await rust_matrix.MatrixService.create(
     homeserver: 'http://127.0.0.1:8008',
-    storePath:
-        '${supportDirectory.path}/matrix-store',
+    storePath: '${supportDirectory.path}/matrix-store-$_profile',
     storePassphrase: storePassphrase,
   );
 
   runApp(
-    App(
-      matrixService: matrixService,
-      authStorageClient: authStorageClient,
-    ),
+    App(matrixService: matrixService, authStorageClient: authStorageClient),
   );
 }

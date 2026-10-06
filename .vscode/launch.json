@@ -1,0 +1,38 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Synnal - usuarioA",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "deviceId": "macos",
+            "toolArgs": [
+                "--dart-define",
+                "SYNNAL_PROFILE=usuarioA"
+            ]
+        },
+        {
+            "name": "Synnal - usuarioB",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "deviceId": "macos",
+            "toolArgs": [
+                "--dart-define",
+                "SYNNAL_PROFILE=usuarioB"
+            ]
+        },
+        {
+            "name": "Synnal - usuarioC",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "deviceId": "macos",
+            "toolArgs": [
+                "--dart-define",
+                "SYNNAL_PROFILE=usuarioC"
+            ]
+        }
+    ]
+}

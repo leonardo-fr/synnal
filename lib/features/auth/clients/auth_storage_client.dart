@@ -5,69 +5,47 @@ import 'dart:math';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AuthStorageClient {
-  AuthStorageClient()
-      : _storage = Platform.isMacOS
-            ? const FlutterSecureStorage(
-                mOptions: MacOsOptions(
-                  usesDataProtectionKeychain: false,
-                ),
-              )
-            : const FlutterSecureStorage();
+  final String profile;
+
+  AuthStorageClient({required this.profile})
+    : _storage = Platform.isMacOS
+          ? const FlutterSecureStorage(
+              mOptions: MacOsOptions(usesDataProtectionKeychain: false),
+            )
+          : const FlutterSecureStorage();
 
   final FlutterSecureStorage _storage;
 
-  static const _sessionKey =
-      'matrix_session';
+  String get _sessionKey => 'matrix_session_$profile';
 
-  static const _storePassphraseKey =
-      'matrix_store_passphrase';
+  String get _storePassphraseKey => 'matrix_store_passphrase_$profile';
 
   Future<String?> getSession() async {
-    return _storage.read(
-      key: _sessionKey,
-    );
+    return _storage.read(key: _sessionKey);
   }
 
-  Future<void> salvarSession(
-    String session,
-  ) async {
-    await _storage.write(
-      key: _sessionKey,
-      value: session,
-    );
+  Future<void> salvarSession(String session) async {
+    await _storage.write(key: _sessionKey, value: session);
   }
 
   Future<void> removerSession() async {
-    await _storage.delete(
-      key: _sessionKey,
-    );
+    await _storage.delete(key: _sessionKey);
   }
 
   Future<String> getOrCreateStorePassphrase() async {
-    final passphrase =
-        await _storage.read(
-      key: _storePassphraseKey,
-    );
+    final passphrase = await _storage.read(key: _storePassphraseKey);
 
-    if (passphrase != null &&
-        passphrase.isNotEmpty) {
+    if (passphrase != null && passphrase.isNotEmpty) {
       return passphrase;
     }
 
     final random = Random.secure();
 
-    final bytes = List<int>.generate(
-      32,
-      (_) => random.nextInt(256),
-    );
+    final bytes = List<int>.generate(32, (_) => random.nextInt(256));
 
-    final novaPassphrase =
-        base64UrlEncode(bytes);
+    final novaPassphrase = base64UrlEncode(bytes);
 
-    await _storage.write(
-      key: _storePassphraseKey,
-      value: novaPassphrase,
-    );
+    await _storage.write(key: _storePassphraseKey, value: novaPassphrase);
 
     return novaPassphrase;
   }

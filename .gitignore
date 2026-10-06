@@ -9,8 +9,5 @@ build/
 # FVM
 .fvm/
 
-# VS Code
-.vscode/
-
 # Rust
 rust/target/
