@@ -179,4 +179,14 @@ impl MatrixService {
             .list_joined_rooms()
             .await
     }
+
+    pub async fn create_room(
+        &self,
+        name: String,
+    ) -> Result<MatrixRoomSummary, String> {
+        self.current_client()
+            .await?
+            .create_room(name)
+            .await
+    }
 }

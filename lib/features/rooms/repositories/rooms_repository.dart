@@ -11,4 +11,10 @@ class RoomsRepository {
 
     return rooms.map((room) => Room(id: room.roomId, name: room.name)).toList();
   }
+
+  Future<Room> criarSala(String name) async {
+    final room = await _matrixRoomsClient.criarSala(name);
+
+    return Room(id: room.roomId, name: room.name);
+  }
 }

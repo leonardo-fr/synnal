@@ -21,3 +21,9 @@ class RoomSelecionada extends RoomsEvent {
 
   const RoomSelecionada(this.roomId);
 }
+
+class RoomCriada extends RoomsEvent {
+  final String name;
+
+  const RoomCriada(this.name);
+}

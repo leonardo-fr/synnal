@@ -13,6 +13,7 @@ class RoomsBloc extends Bloc<RoomsEvent, RoomsState> {
   RoomsBloc(this._roomsRepository) : super(RoomsInicial()) {
     on<RoomsCarregadas>(_onRoomsCarregadas);
     on<RoomSelecionada>(_onRoomSelecionada);
+    on<RoomCriada>(_onRoomCriada);
   }
 
   FutureOr<void> _onRoomsCarregadas(
@@ -57,5 +58,30 @@ class RoomsBloc extends Bloc<RoomsEvent, RoomsState> {
     emit(
       RoomSelecionarSucesso.fromLastState(state, selectedRoomId: event.roomId),
     );
+  }
+
+  FutureOr<void> _onRoomCriada(
+    RoomCriada event,
+    Emitter<RoomsState> emit,
+  ) async {
+    emit(RoomCriarEmProgresso.fromLastState(state));
+
+    try {
+      final room = await _roomsRepository.criarSala(event.name);
+
+      final rooms = [...state.rooms, room];
+
+      emit(
+        RoomCriarSucesso.fromLastState(
+          state,
+          rooms: rooms,
+          selectedRoomId: room.id,
+        ),
+      );
+    } catch (error, stackTrace) {
+      addError(error, stackTrace);
+
+      emit(RoomCriarFalha.fromLastState(state));
+    }
   }
 }

@@ -89,3 +89,19 @@ class RoomSelecionarSucesso extends RoomsState {
     required super.selectedRoomId,
   }) : super.fromLastState();
 }
+
+class RoomCriarEmProgresso extends RoomsState {
+  RoomCriarEmProgresso.fromLastState(super.lastState) : super.fromLastState();
+}
+
+class RoomCriarFalha extends RoomsState {
+  RoomCriarFalha.fromLastState(super.lastState) : super.fromLastState();
+}
+
+class RoomCriarSucesso extends RoomsState {
+  RoomCriarSucesso.fromLastState(
+    super.lastState, {
+    required super.rooms,
+    required super.selectedRoomId,
+  }) : super.fromLastState();
+}

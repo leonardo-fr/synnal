@@ -10,6 +10,8 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MatrixClient>>
 abstract class MatrixClient implements RustOpaqueInterface {
+  Future<MatrixRoomSummary> createRoom({required String name});
+
   Future<String?> getDisplayName();
 
   Future<bool> isLoggedIn();

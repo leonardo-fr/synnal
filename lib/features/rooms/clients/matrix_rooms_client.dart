@@ -9,4 +9,8 @@ class MatrixRoomsClient {
   Future<List<rust_client.MatrixRoomSummary>> listarSalas() {
     return _matrixService.listJoinedRooms();
   }
+
+  Future<rust_client.MatrixRoomSummary> criarSala(String name) {
+    return _matrixService.createRoom(name: name);
+  }
 }
