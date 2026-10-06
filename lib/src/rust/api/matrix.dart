@@ -11,6 +11,8 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MatrixService>>
 abstract class MatrixService implements RustOpaqueInterface {
+  Future<void> clearRooms();
+
   static Future<MatrixService> create({
     required String homeserver,
     required String storePath,
@@ -25,6 +27,8 @@ abstract class MatrixService implements RustOpaqueInterface {
     required String name,
     required List<String> invitedUserIds,
   });
+
+  Future<void> deleteRoom({required String roomId});
 
   Future<String?> getDisplayName();
 
@@ -56,4 +60,6 @@ abstract class MatrixService implements RustOpaqueInterface {
   Future<void> resetClient();
 
   Future<void> restore({required String sessionJson});
+
+  Stream<MatrixRoomsSnapshot> watchRooms();
 }

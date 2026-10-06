@@ -25,6 +25,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMatrixServicePtr;
 
   @protected
+  AnyhowException dco_decode_AnyhowException(dynamic raw);
+
+  @protected
   MatrixService
   dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMatrixService(
     dynamic raw,
@@ -41,6 +44,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMatrixService(
     dynamic raw,
   );
+
+  @protected
+  RustStreamSink<MatrixRoomsSnapshot>
+  dco_decode_StreamSink_matrix_rooms_snapshot_Sse(dynamic raw);
 
   @protected
   String dco_decode_String(dynamic raw);
@@ -76,6 +83,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   BigInt dco_decode_usize(dynamic raw);
 
   @protected
+  AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
+
+  @protected
   MatrixService
   sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMatrixService(
     SseDeserializer deserializer,
@@ -92,6 +102,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMatrixService(
     SseDeserializer deserializer,
   );
+
+  @protected
+  RustStreamSink<MatrixRoomsSnapshot>
+  sse_decode_StreamSink_matrix_rooms_snapshot_Sse(SseDeserializer deserializer);
 
   @protected
   String sse_decode_String(SseDeserializer deserializer);
@@ -136,6 +150,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int sse_decode_i_32(SseDeserializer deserializer);
 
   @protected
+  void sse_encode_AnyhowException(
+    AnyhowException self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void
   sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMatrixService(
     MatrixService self,
@@ -153,6 +173,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void
   sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMatrixService(
     MatrixService self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_StreamSink_matrix_rooms_snapshot_Sse(
+    RustStreamSink<MatrixRoomsSnapshot> self,
     SseSerializer serializer,
   );
 

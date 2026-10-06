@@ -68,7 +68,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => 1330375170;
+  int get rustContentHash => -1661061674;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -80,6 +80,10 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 }
 
 abstract class RustLibApi extends BaseApi {
+  Future<void> crateApiMatrixMatrixServiceClearRooms({
+    required MatrixService that,
+  });
+
   Future<MatrixService> crateApiMatrixMatrixServiceCreate({
     required String homeserver,
     required String storePath,
@@ -90,6 +94,11 @@ abstract class RustLibApi extends BaseApi {
     required MatrixService that,
     required String name,
     required List<String> invitedUserIds,
+  });
+
+  Future<void> crateApiMatrixMatrixServiceDeleteRoom({
+    required MatrixService that,
+    required String roomId,
   });
 
   Future<String?> crateApiMatrixMatrixServiceGetDisplayName({
@@ -134,6 +143,10 @@ abstract class RustLibApi extends BaseApi {
     required String sessionJson,
   });
 
+  Stream<MatrixRoomsSnapshot> crateApiMatrixMatrixServiceWatchRooms({
+    required MatrixService that,
+  });
+
   String crateApiSimpleGreet({required String name});
 
   Future<void> crateApiSimpleInitApp();
@@ -157,6 +170,42 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   });
 
   @override
+  Future<void> crateApiMatrixMatrixServiceClearRooms({
+    required MatrixService that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMatrixService(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 1,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiMatrixMatrixServiceClearRoomsConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiMatrixMatrixServiceClearRoomsConstMeta =>
+      const TaskConstMeta(
+        debugName: "MatrixService_clear_rooms",
+        argNames: ["that"],
+      );
+
+  @override
   Future<MatrixService> crateApiMatrixMatrixServiceCreate({
     required String homeserver,
     required String storePath,
@@ -172,7 +221,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 1,
+            funcId: 2,
             port: port_,
           );
         },
@@ -213,7 +262,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 2,
+            funcId: 3,
             port: port_,
           );
         },
@@ -235,6 +284,44 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<void> crateApiMatrixMatrixServiceDeleteRoom({
+    required MatrixService that,
+    required String roomId,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMatrixService(
+            that,
+            serializer,
+          );
+          sse_encode_String(roomId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 4,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiMatrixMatrixServiceDeleteRoomConstMeta,
+        argValues: [that, roomId],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiMatrixMatrixServiceDeleteRoomConstMeta =>
+      const TaskConstMeta(
+        debugName: "MatrixService_delete_room",
+        argNames: ["that", "roomId"],
+      );
+
+  @override
   Future<String?> crateApiMatrixMatrixServiceGetDisplayName({
     required MatrixService that,
   }) {
@@ -249,7 +336,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 3,
+            funcId: 5,
             port: port_,
           );
         },
@@ -285,7 +372,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 4,
+            funcId: 6,
             port: port_,
           );
         },
@@ -323,7 +410,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 5,
+            funcId: 7,
             port: port_,
           );
         },
@@ -359,7 +446,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 6,
+            funcId: 8,
             port: port_,
           );
         },
@@ -401,7 +488,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 7,
+            funcId: 9,
             port: port_,
           );
         },
@@ -437,7 +524,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 8,
+            funcId: 10,
             port: port_,
           );
         },
@@ -479,7 +566,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 9,
+            funcId: 11,
             port: port_,
           );
         },
@@ -515,7 +602,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 10,
+            funcId: 12,
             port: port_,
           );
         },
@@ -553,7 +640,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 11,
+            funcId: 13,
             port: port_,
           );
         },
@@ -575,13 +662,54 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Stream<MatrixRoomsSnapshot> crateApiMatrixMatrixServiceWatchRooms({
+    required MatrixService that,
+  }) {
+    final sink = RustStreamSink<MatrixRoomsSnapshot>();
+    unawaited(
+      handler.executeNormal(
+        NormalTask(
+          callFfi: (port_) {
+            final serializer = SseSerializer(generalizedFrbRustBinding);
+            sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMatrixService(
+              that,
+              serializer,
+            );
+            sse_encode_StreamSink_matrix_rooms_snapshot_Sse(sink, serializer);
+            pdeCallFfi(
+              generalizedFrbRustBinding,
+              serializer,
+              funcId: 14,
+              port: port_,
+            );
+          },
+          codec: SseCodec(
+            decodeSuccessData: sse_decode_unit,
+            decodeErrorData: sse_decode_String,
+          ),
+          constMeta: kCrateApiMatrixMatrixServiceWatchRoomsConstMeta,
+          argValues: [that, sink],
+          apiImpl: this,
+        ),
+      ),
+    );
+    return sink.stream;
+  }
+
+  TaskConstMeta get kCrateApiMatrixMatrixServiceWatchRoomsConstMeta =>
+      const TaskConstMeta(
+        debugName: "MatrixService_watch_rooms",
+        argNames: ["that", "sink"],
+      );
+
+  @override
   String crateApiSimpleGreet({required String name}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(name, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 12)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -606,7 +734,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 13,
+            funcId: 16,
             port: port_,
           );
         },
@@ -633,6 +761,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMatrixService;
 
   @protected
+  AnyhowException dco_decode_AnyhowException(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return AnyhowException(raw as String);
+  }
+
+  @protected
   MatrixService
   dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMatrixService(
     dynamic raw,
@@ -657,6 +791,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return MatrixServiceImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  RustStreamSink<MatrixRoomsSnapshot>
+  dco_decode_StreamSink_matrix_rooms_snapshot_Sse(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    throw UnimplementedError();
   }
 
   @protected
@@ -693,11 +834,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   MatrixRoomSummary dco_decode_matrix_room_summary(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 2)
-      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
     return MatrixRoomSummary(
       roomId: dco_decode_String(arr[0]),
       name: dco_decode_String(arr[1]),
+      creatorId: dco_decode_opt_String(arr[2]),
+      participantIds: dco_decode_list_String(arr[3]),
     );
   }
 
@@ -738,6 +881,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_String(deserializer);
+    return AnyhowException(inner);
+  }
+
+  @protected
   MatrixService
   sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMatrixService(
     SseDeserializer deserializer,
@@ -771,6 +921,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       sse_decode_usize(deserializer),
       sse_decode_i_32(deserializer),
     );
+  }
+
+  @protected
+  RustStreamSink<MatrixRoomsSnapshot>
+  sse_decode_StreamSink_matrix_rooms_snapshot_Sse(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    throw UnimplementedError('Unreachable ()');
   }
 
   @protected
@@ -826,7 +985,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_roomId = sse_decode_String(deserializer);
     var var_name = sse_decode_String(deserializer);
-    return MatrixRoomSummary(roomId: var_roomId, name: var_name);
+    var var_creatorId = sse_decode_opt_String(deserializer);
+    var var_participantIds = sse_decode_list_String(deserializer);
+    return MatrixRoomSummary(
+      roomId: var_roomId,
+      name: var_name,
+      creatorId: var_creatorId,
+      participantIds: var_participantIds,
+    );
   }
 
   @protected
@@ -877,6 +1043,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_AnyhowException(
+    AnyhowException self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.message, serializer);
+  }
+
+  @protected
   void
   sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMatrixService(
     MatrixService self,
@@ -911,6 +1086,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_usize(
       (self as MatrixServiceImpl).frbInternalSseEncode(move: null),
+      serializer,
+    );
+  }
+
+  @protected
+  void sse_encode_StreamSink_matrix_rooms_snapshot_Sse(
+    RustStreamSink<MatrixRoomsSnapshot> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(
+      self.setupAndSerialize(
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_matrix_rooms_snapshot,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+      ),
       serializer,
     );
   }
@@ -966,6 +1158,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.roomId, serializer);
     sse_encode_String(self.name, serializer);
+    sse_encode_opt_String(self.creatorId, serializer);
+    sse_encode_list_String(self.participantIds, serializer);
   }
 
   @protected
@@ -1031,6 +1225,9 @@ class MatrixServiceImpl extends RustOpaque implements MatrixService {
         RustLib.instance.api.rust_arc_decrement_strong_count_MatrixServicePtr,
   );
 
+  Future<void> clearRooms() =>
+      RustLib.instance.api.crateApiMatrixMatrixServiceClearRooms(that: this);
+
   Future<MatrixRoomSummary> createPrivateRoom({
     required String name,
     required List<String> invitedUserIds,
@@ -1039,6 +1236,9 @@ class MatrixServiceImpl extends RustOpaque implements MatrixService {
     name: name,
     invitedUserIds: invitedUserIds,
   );
+
+  Future<void> deleteRoom({required String roomId}) => RustLib.instance.api
+      .crateApiMatrixMatrixServiceDeleteRoom(that: this, roomId: roomId);
 
   Future<String?> getDisplayName() => RustLib.instance.api
       .crateApiMatrixMatrixServiceGetDisplayName(that: this);
@@ -1089,4 +1289,7 @@ class MatrixServiceImpl extends RustOpaque implements MatrixService {
 
   Future<void> restore({required String sessionJson}) => RustLib.instance.api
       .crateApiMatrixMatrixServiceRestore(that: this, sessionJson: sessionJson);
+
+  Stream<MatrixRoomsSnapshot> watchRooms() =>
+      RustLib.instance.api.crateApiMatrixMatrixServiceWatchRooms(that: this);
 }

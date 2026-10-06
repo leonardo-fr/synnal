@@ -74,16 +74,10 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildRoomsContent(BuildContext context, RoomsState state) {
-    //
-    // Primeiro carregamento.
-    //
     if (state is RoomsCarregarEmProgresso && state.rooms.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    //
-    // Falha no primeiro carregamento.
-    //
     if (state is RoomsCarregarFalha && state.rooms.isEmpty) {
       return Center(
         child: Column(
@@ -102,10 +96,6 @@ class HomeScreen extends StatelessWidget {
       );
     }
 
-    //
-    // Depois que o carregamento inicial terminou,
-    // sempre mostramos a estrutura da Home.
-    //
     return Row(
       children: [
         SizedBox(width: 280, child: _buildRoomsList(context, state)),
@@ -153,6 +143,26 @@ class HomeScreen extends StatelessWidget {
                 icon: const Icon(Icons.add),
                 tooltip: 'Criar sala',
               ),
+              PopupMenuButton<String>(
+                tooltip: 'Opções',
+                onSelected: (value) {
+                  if (value == 'limpar') {
+                    _confirmarLimparTudo(context);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'limpar',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_sweep_outlined),
+                        SizedBox(width: 12),
+                        Text('Limpar todos'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -164,9 +174,6 @@ class HomeScreen extends StatelessWidget {
         Expanded(
           child: ListView(
             children: [
-              //
-              // Convites
-              //
               if (state.invitedRooms.isNotEmpty) ...[
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -189,37 +196,17 @@ class HomeScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Padding(
-                                  padding: EdgeInsets.only(top: 2),
-                                  child: Icon(Icons.mail_outline),
-                                ),
+                                const Icon(Icons.mail_outline),
 
                                 const SizedBox(width: 12),
 
                                 Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        room.name,
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.titleSmall,
-                                      ),
-
-                                      const SizedBox(height: 4),
-
-                                      Text(
-                                        room.id,
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodySmall,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
+                                  child: Text(
+                                    room.name,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleSmall,
                                   ),
                                 ),
                               ],
@@ -227,23 +214,44 @@ class HomeScreen extends StatelessWidget {
 
                             const SizedBox(height: 12),
 
-                            FilledButton.tonal(
-                              onPressed: aceitandoConvite
-                                  ? null
-                                  : () {
-                                      context.read<RoomsBloc>().add(
-                                        RoomConviteAceito(room.id),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: () {
+                                      _confirmarRecusarConvite(
+                                        context,
+                                        room.id,
+                                        room.name,
                                       );
                                     },
-                              child: aceitandoConvite
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Text('Aceitar convite'),
+                                    child: const Text('Recusar'),
+                                  ),
+                                ),
+
+                                const SizedBox(width: 8),
+
+                                Expanded(
+                                  child: FilledButton.tonal(
+                                    onPressed: aceitandoConvite
+                                        ? null
+                                        : () {
+                                            context.read<RoomsBloc>().add(
+                                              RoomConviteAceito(room.id),
+                                            );
+                                          },
+                                    child: aceitandoConvite
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Text('Aceitar'),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -255,9 +263,6 @@ class HomeScreen extends StatelessWidget {
                 const Divider(),
               ],
 
-              //
-              // Salas
-              //
               if (state.rooms.isNotEmpty) ...[
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -277,13 +282,17 @@ class HomeScreen extends StatelessWidget {
                     onTap: () {
                       context.read<RoomsBloc>().add(RoomSelecionada(room.id));
                     },
+                    trailing: IconButton(
+                      onPressed: () {
+                        _confirmarApagarSala(context, room.id, room.name);
+                      },
+                      icon: const Icon(Icons.delete_outline),
+                      tooltip: 'Apagar chat',
+                    ),
                   );
                 }),
               ],
 
-              //
-              // Nada ainda.
-              //
               if (state.rooms.isEmpty && state.invitedRooms.isEmpty)
                 const Padding(
                   padding: EdgeInsets.all(24),
@@ -301,19 +310,129 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _confirmarRecusarConvite(
+    BuildContext context,
+    String roomId,
+    String roomName,
+  ) async {
+    final confirmou = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Recusar convite?'),
+          content: Text(
+            'Deseja recusar o convite '
+            'para "$roomName"?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(false);
+              },
+              child: const Text('Cancelar'),
+            ),
+
+            FilledButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(true);
+              },
+              child: const Text('Recusar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmou != true || !context.mounted) {
+      return;
+    }
+
+    context.read<RoomsBloc>().add(RoomApagada(roomId));
+  }
+
+  Future<void> _confirmarApagarSala(
+    BuildContext context,
+    String roomId,
+    String roomName,
+  ) async {
+    final confirmou = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Apagar chat?'),
+          content: Text(
+            'O chat "$roomName" será removido '
+            'da sua conta. Você sairá da sala.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(false);
+              },
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(true);
+              },
+              child: const Text('Apagar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmou != true || !context.mounted) {
+      return;
+    }
+
+    context.read<RoomsBloc>().add(RoomApagada(roomId));
+  }
+
+  Future<void> _confirmarLimparTudo(BuildContext context) async {
+    final confirmou = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Limpar todos os chats?'),
+          content: const Text(
+            'Você sairá de todas as salas '
+            'e descartará todos os convites. '
+            'Essa ação não pode ser desfeita '
+            'automaticamente.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(false);
+              },
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(true);
+              },
+              child: const Text('Limpar todos'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmou != true || !context.mounted) {
+      return;
+    }
+
+    context.read<RoomsBloc>().add(const RoomsLimpas());
+  }
+
   Widget _buildSelectedRoom(BuildContext context, RoomsState state) {
     final room = state.selectedRoom;
 
-    //
-    // Nenhuma sala selecionada.
-    //
     if (room == null) {
       return const Center(child: Text('Selecione uma sala'));
     }
 
-    //
-    // Sala selecionada.
-    //
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -333,10 +452,6 @@ class HomeScreen extends StatelessWidget {
   }
 
   Future<void> _criarSala(BuildContext context) async {
-    final nameController = TextEditingController();
-
-    final inviteController = TextEditingController();
-    //verificar: TODO: apagar (inicio)
     final authState = context.read<AuthBloc>().state;
 
     final currentUserId = authState.userId;
@@ -345,8 +460,8 @@ class HomeScreen extends StatelessWidget {
       return;
     }
 
-    debugPrint('Matrix userId atual: $currentUserId');
-    //verificar: apagar (fim)
+    String name = '';
+    String convidados = '';
 
     final result = await showDialog<({String name, List<String> invitedUsers})>(
       context: context,
@@ -355,29 +470,35 @@ class HomeScreen extends StatelessWidget {
           title: const Text('Nova sala privada'),
           content: SizedBox(
             width: 400,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Nome da sala',
-                    hintText: 'Ex.: Desenvolvimento',
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    autofocus: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Nome da sala',
+                      hintText: 'Ex.: Desenvolvimento',
+                    ),
+                    onChanged: (value) {
+                      name = value;
+                    },
                   ),
-                ),
 
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                TextField(
-                  controller: inviteController,
-                  decoration: const InputDecoration(
-                    labelText: 'Convidados',
-                    hintText: '@usuario:servidor',
-                    helperText: 'Separe vários usuários por vírgula',
+                  TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Convidados',
+                      hintText: '@usuario:servidor',
+                      helperText: 'Separe vários usuários por vírgula',
+                    ),
+                    onChanged: (value) {
+                      convidados = value;
+                    },
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           actions: [
@@ -390,15 +511,19 @@ class HomeScreen extends StatelessWidget {
 
             FilledButton(
               onPressed: () {
-                final name = nameController.text.trim();
+                final roomName = name.trim();
 
-                final invitedUsers = inviteController.text
+                final invitedUsers = convidados
                     .split(',')
                     .map((value) => value.trim())
                     .where((value) => value.isNotEmpty)
+                    .map(
+                      (value) =>
+                          _normalizarUsuarioConvidado(value, currentUserId),
+                    )
                     .toList();
 
-                if (name.isEmpty) {
+                if (roomName.isEmpty) {
                   return;
                 }
 
@@ -408,7 +533,7 @@ class HomeScreen extends StatelessWidget {
 
                 Navigator.of(
                   dialogContext,
-                ).pop((name: name, invitedUsers: invitedUsers));
+                ).pop((name: roomName, invitedUsers: invitedUsers));
               },
               child: const Text('Criar'),
             ),
@@ -416,9 +541,6 @@ class HomeScreen extends StatelessWidget {
         );
       },
     );
-
-    nameController.dispose();
-    inviteController.dispose();
 
     if (result == null) {
       return;
@@ -431,5 +553,27 @@ class HomeScreen extends StatelessWidget {
     context.read<RoomsBloc>().add(
       RoomCriada(name: result.name, invitedUserIds: result.invitedUsers),
     );
+  }
+
+  String _normalizarUsuarioConvidado(String value, String currentUserId) {
+    final input = value.trim();
+
+    if (input.startsWith('@') && input.contains(':')) {
+      return input;
+    }
+
+    final separator = currentUserId.indexOf(':');
+
+    if (!currentUserId.startsWith('@') || separator <= 1) {
+      throw StateError(
+        'Matrix userId atual inválido: '
+        '$currentUserId',
+      );
+    }
+
+    final serverName = currentUserId.substring(separator + 1);
+    final username = input.startsWith('@') ? input.substring(1) : input;
+
+    return '@$username:$serverName';
   }
 }

@@ -1,8 +1,7 @@
-use std::sync::Arc;
-
-use tokio::sync::RwLock;
-
 use super::client::{MatrixClient, MatrixRoomSummary, MatrixRoomsSnapshot};
+use crate::frb_generated::StreamSink;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 pub struct MatrixService {
     homeserver: String,
@@ -148,5 +147,19 @@ impl MatrixService {
             .await?
             .join_invited_room(room_id)
             .await
+    }
+
+    pub async fn delete_room(&self, room_id: String) -> Result<(), String> {
+        self.current_client().await?.delete_room(room_id).await
+    }
+
+    pub async fn clear_rooms(&self) -> Result<(), String> {
+        self.current_client().await?.clear_rooms().await
+    }
+
+    pub async fn watch_rooms(&self, sink: StreamSink<MatrixRoomsSnapshot>) -> Result<(), String> {
+        let client = self.current_client().await?;
+
+        client.watch_rooms(sink).await
     }
 }

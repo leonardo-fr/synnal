@@ -6,18 +6,29 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `create_private_room`, `get_display_name`, `is_logged_in`, `join_invited_room`, `list_rooms`, `login_password`, `logout`, `new`, `register_user`, `restore_session`
+// These functions are ignored because they are not marked as `pub`: `clear_rooms`, `create_private_room`, `delete_room`, `get_display_name`, `is_logged_in`, `join_invited_room`, `list_rooms`, `login_password`, `logout`, `new`, `register_user`, `remove_room`, `restore_session`, `room_summary`, `rooms_snapshot`, `watch_rooms`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `MatrixClient`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `fmt`, `fmt`
 
 class MatrixRoomSummary {
   final String roomId;
   final String name;
+  final String? creatorId;
+  final List<String> participantIds;
 
-  const MatrixRoomSummary({required this.roomId, required this.name});
+  const MatrixRoomSummary({
+    required this.roomId,
+    required this.name,
+    this.creatorId,
+    required this.participantIds,
+  });
 
   @override
-  int get hashCode => roomId.hashCode ^ name.hashCode;
+  int get hashCode =>
+      roomId.hashCode ^
+      name.hashCode ^
+      creatorId.hashCode ^
+      participantIds.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -25,7 +36,9 @@ class MatrixRoomSummary {
       other is MatrixRoomSummary &&
           runtimeType == other.runtimeType &&
           roomId == other.roomId &&
-          name == other.name;
+          name == other.name &&
+          creatorId == other.creatorId &&
+          participantIds == other.participantIds;
 }
 
 class MatrixRoomsSnapshot {

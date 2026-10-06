@@ -1,3 +1,7 @@
+use std::{sync::Arc, time::Duration};
+
+use crate::frb_generated::StreamSink;
+
 use matrix_sdk::{
     authentication::matrix::MatrixSession,
     config::SyncSettings,
@@ -13,7 +17,7 @@ use matrix_sdk::{
         OwnedRoomId, OwnedUserId,
     },
     store::RoomLoadSettings,
-    Client,
+    Client, LoopCtrl,
 };
 
 use tokio::sync::Mutex;
@@ -22,6 +26,8 @@ use tokio::sync::Mutex;
 pub struct MatrixRoomSummary {
     pub room_id: String,
     pub name: String,
+    pub creator_id: Option<String>,
+    pub participant_ids: Vec<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -54,6 +60,37 @@ impl MatrixClient {
         })
     }
 
+    async fn room_summary(&self, room: &matrix_sdk::Room) -> Result<MatrixRoomSummary, String> {
+        let name = match room.name() {
+            Some(name) if !name.trim().is_empty() => name,
+
+            _ => room
+                .display_name()
+                .await
+                .map_err(|e| e.to_string())?
+                .to_string(),
+        };
+
+        let creator_id = room
+            .creators()
+            .and_then(|creators| creators.into_iter().next())
+            .map(|user_id| user_id.to_string());
+
+        let participant_ids = room
+            .joined_user_ids()
+            .await
+            .map_err(|e| e.to_string())?
+            .into_iter()
+            .map(|user_id| user_id.to_string())
+            .collect();
+
+        Ok(MatrixRoomSummary {
+            room_id: room.room_id().to_string(),
+            name,
+            creator_id,
+            participant_ids,
+        })
+    }
     pub(super) async fn get_display_name(&self) -> Result<Option<String>, String> {
         self.client
             .account()
@@ -218,52 +255,7 @@ impl MatrixClient {
             .await
             .map_err(|e| e.to_string())?;
 
-        let mut rooms = Vec::new();
-
-        for room in self.client.joined_rooms() {
-            let name = match room.name() {
-                Some(name) if !name.trim().is_empty() => name,
-
-                _ => room
-                    .display_name()
-                    .await
-                    .map_err(|e| e.to_string())?
-                    .to_string(),
-            };
-
-            rooms.push(MatrixRoomSummary {
-                room_id: room.room_id().to_string(),
-                name,
-            });
-        }
-
-        let mut invited_rooms = Vec::new();
-
-        for room in self.client.invited_rooms() {
-            let name = match room.name() {
-                Some(name) if !name.trim().is_empty() => name,
-
-                _ => room
-                    .display_name()
-                    .await
-                    .map_err(|e| e.to_string())?
-                    .to_string(),
-            };
-
-            invited_rooms.push(MatrixRoomSummary {
-                room_id: room.room_id().to_string(),
-                name,
-            });
-        }
-
-        rooms.sort_by_key(|room| room.name.to_lowercase());
-
-        invited_rooms.sort_by_key(|room| room.name.to_lowercase());
-
-        Ok(MatrixRoomsSnapshot {
-            rooms,
-            invited_rooms,
-        })
+        self.rooms_snapshot().await
     }
 
     pub(super) async fn create_private_room(
@@ -287,11 +279,8 @@ impl MatrixClient {
         let mut request = CreateRoomRequest::new();
 
         request.name = Some(name.clone());
-
         request.preset = Some(RoomPreset::PrivateChat);
-
         request.visibility = Visibility::Private;
-
         request.invite = invited_users;
 
         let room = self
@@ -299,10 +288,14 @@ impl MatrixClient {
             .create_room(request)
             .await
             .map_err(|e| e.to_string())?;
+        let creator_id = self.client.user_id().map(|user_id| user_id.to_string());
 
+        let participant_ids = creator_id.clone().into_iter().collect();
         Ok(MatrixRoomSummary {
             room_id: room.room_id().to_string(),
             name,
+            creator_id,
+            participant_ids,
         })
     }
 
@@ -320,19 +313,142 @@ impl MatrixClient {
             .await
             .map_err(|e| e.to_string())?;
 
-        let name = match room.name() {
-            Some(name) if !name.trim().is_empty() => name,
+        self.room_summary(&room).await
+    }
 
-            _ => room
-                .display_name()
-                .await
-                .map_err(|e| e.to_string())?
-                .to_string(),
-        };
+    async fn remove_room(&self, room_id: &matrix_sdk::ruma::RoomId) -> Result<(), String> {
+        let was_invited = self
+            .client
+            .invited_rooms()
+            .iter()
+            .any(|room| room.room_id() == room_id);
 
-        Ok(MatrixRoomSummary {
-            room_id: room.room_id().to_string(),
-            name,
+        let room = self
+            .client
+            .get_room(room_id)
+            .ok_or_else(|| format!("Sala não encontrada: {room_id}"))?;
+
+        room.leave().await.map_err(|e| e.to_string())?;
+
+        // Room::leave já esquece automaticamente
+        // uma sala que estava apenas como convite.
+        if !was_invited {
+            room.forget().await.map_err(|e| e.to_string())?;
+        }
+
+        Ok(())
+    }
+
+    pub(super) async fn delete_room(&self, room_id: String) -> Result<(), String> {
+        let room_id = room_id
+            .parse::<OwnedRoomId>()
+            .map_err(|e| format!("Room ID inválido '{room_id}': {e}"))?;
+
+        self.remove_room(&room_id).await
+    }
+
+    pub(super) async fn clear_rooms(&self) -> Result<(), String> {
+        self.client
+            .sync_once(SyncSettings::default())
+            .await
+            .map_err(|e| e.to_string())?;
+
+        let room_ids = self
+            .client
+            .joined_rooms()
+            .into_iter()
+            .chain(self.client.invited_rooms().into_iter())
+            .map(|room| room.room_id().to_owned())
+            .collect::<Vec<_>>();
+
+        for room_id in room_ids {
+            self.remove_room(&room_id).await?;
+        }
+
+        Ok(())
+    }
+    async fn rooms_snapshot(&self) -> Result<MatrixRoomsSnapshot, String> {
+        let mut rooms = Vec::new();
+
+        for room in self.client.joined_rooms() {
+            rooms.push(self.room_summary(&room).await?);
+        }
+
+        let mut invited_rooms = Vec::new();
+
+        for room in self.client.invited_rooms() {
+            let name = match room.name() {
+                Some(name) if !name.trim().is_empty() => name,
+
+                _ => room
+                    .display_name()
+                    .await
+                    .map_err(|e| e.to_string())?
+                    .to_string(),
+            };
+
+            let creator_id = room
+                .creators()
+                .and_then(|creators| creators.into_iter().next())
+                .map(|user_id| user_id.to_string());
+
+            invited_rooms.push(MatrixRoomSummary {
+                room_id: room.room_id().to_string(),
+                name,
+                creator_id,
+                participant_ids: Vec::new(),
+            });
+        }
+
+        rooms.sort_by_key(|room| room.name.to_lowercase());
+
+        invited_rooms.sort_by_key(|room| room.name.to_lowercase());
+
+        Ok(MatrixRoomsSnapshot {
+            rooms,
+            invited_rooms,
         })
+    }
+
+    pub(super) async fn watch_rooms(
+        self: Arc<Self>,
+        sink: StreamSink<MatrixRoomsSnapshot>,
+    ) -> Result<(), String> {
+        let client = self.client.clone();
+
+        let matrix_client = self.clone();
+
+        let settings = SyncSettings::new()
+            .timeout(Duration::from_secs(30))
+            .ignore_timeout_on_first_sync(true);
+
+        client
+            .sync_with_callback(settings, move |_response| {
+                let matrix_client = matrix_client.clone();
+
+                let sink = sink.clone();
+
+                async move {
+                    let snapshot = match matrix_client.rooms_snapshot().await {
+                        Ok(snapshot) => snapshot,
+
+                        Err(error) => {
+                            eprintln!("Erro ao atualizar salas: {error}");
+
+                            return LoopCtrl::Continue;
+                        }
+                    };
+
+                    if sink.add(snapshot).is_err() {
+                        // O Flutter cancelou o stream,
+                        // por exemplo ao sair da conta.
+                        return LoopCtrl::Break;
+                    }
+
+                    LoopCtrl::Continue
+                }
+            })
+            .await
+            .map_err(|e| e.to_string())
     }
 }

@@ -20,11 +20,19 @@ class MatrixRoomsClient {
     );
   }
 
-  Future<rust_client.MatrixRoomSummary> aceitarConvite(
-    String roomId,
-  ) {
-    return _matrixService.joinInvitedRoom(
-      roomId: roomId,
-    );
+  Future<rust_client.MatrixRoomSummary> aceitarConvite(String roomId) {
+    return _matrixService.joinInvitedRoom(roomId: roomId);
+  }
+
+  Future<void> apagarSala(String roomId) {
+    return _matrixService.deleteRoom(roomId: roomId);
+  }
+
+  Future<void> limparSalas() {
+    return _matrixService.clearRooms();
+  }
+
+  Stream<rust_client.MatrixRoomsSnapshot> observarSalas() {
+    return _matrixService.watchRooms();
   }
 }
